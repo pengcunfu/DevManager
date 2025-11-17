@@ -12,6 +12,7 @@
 - 🔄 **版本管理**: 支持特定版本安装和管理
 - 🌐 **镜像源支持**: 内置国内镜像源，加速下载安装
 - 📝 **详细日志**: 完整的安装日志记录和错误诊断
+- 🖥️ **GUI 脚本执行器**: 可视化脚本管理和执行界面
 
 ## 🛠️ 支持的工具
 
@@ -63,32 +64,62 @@
 
 ## 🎯 使用方法
 
-### 命令行参数
+### GUI 脚本执行器（推荐）
+
+使用可视化界面管理和执行脚本：
+
+**Windows:**
+```bash
+启动脚本执行器.bat
+```
+
+**Linux/macOS:**
+```bash
+python script_launcher.py
+```
+
+功能特性：
+- 📂 自动扫描 `config_scripts` 和 `install_scripts` 目录
+- 🔍 支持脚本搜索和分类过滤
+- ⚙️ 可视化参数输入
+- 📊 实时显示脚本执行输出
+- ⏹️ 支持停止正在运行的脚本
+
+### 独立脚本使用
+
+#### 配置脚本
 
 ```bash
-# 列出所有可用工具
-python install.py --list
+# Maven 配置
+python config_scripts/config_maven.py              # 配置阿里云镜像
+python config_scripts/config_maven.py --show       # 显示当前配置
 
-# 查看工具详细信息
-python install.py --info git
+# Pip 配置
+python config_scripts/config_pip.py --list         # 列出所有镜像源
+python config_scripts/config_pip.py --test         # 测试镜像源速度
+python config_scripts/config_pip.py --mirror tsinghua  # 配置清华镜像
 
-# 安装单个工具
-python install.py --install git
+# npm 配置
+python config_scripts/config_npm.py --list         # 列出所有镜像源
+python config_scripts/config_npm.py --test         # 测试镜像源速度
+python config_scripts/config_npm.py --mirror npmmirror  # 配置淘宝镜像
+```
 
-# 安装多个工具
-python install.py --install git docker nodejs
+#### 安装脚本
 
-# 安装所有工具
-python install.py --install-all
+```bash
+# Node.js 安装
+python install_scripts/install_nodejs.py --list    # 列出可用版本
+python install_scripts/install_nodejs.py --install 20.18.1  # 安装指定版本
+python install_scripts/install_nodejs.py --download 20.18.1  # 仅下载
 
-# 强制重新安装
-python install.py --force git
+# Python 安装
+python install_scripts/install_python.py --list    # 列出可用版本
+python install_scripts/install_python.py --install 3.12.7  # 安装指定版本
 
-# 交互式安装（推荐）
-python install.py --interactive
-
-# 显示详细输出
-python install.py --install git --verbose
+# PHP 安装
+python install_scripts/install_php.py --list       # 列出可用版本
+python install_scripts/install_php.py --install 8.3.14  # 安装指定版本
 ```
 
 ### 交互式安装
