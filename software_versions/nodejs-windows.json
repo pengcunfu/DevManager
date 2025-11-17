@@ -1,0 +1,32 @@
+{
+    "23.3.0": [
+        "https://nodejs.org/dist/v23.3.0/node-v23.3.0-x64.msi",
+        "https://registry.npmmirror.com/-/binary/node/v23.3.0/node-v23.3.0-x64.msi",
+        "https://repo.huaweicloud.com/nodejs/v23.3.0/node-v23.3.0-x64.msi"
+    ],
+    "22.12.0": [
+        "https://nodejs.org/dist/v22.12.0/node-v22.12.0-x64.msi",
+        "https://registry.npmmirror.com/-/binary/node/v22.12.0/node-v22.12.0-x64.msi",
+        "https://repo.huaweicloud.com/nodejs/v22.12.0/node-v22.12.0-x64.msi"
+    ],
+    "20.18.1": [
+        "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi",
+        "https://registry.npmmirror.com/-/binary/node/v20.18.1/node-v20.18.1-x64.msi",
+        "https://repo.huaweicloud.com/nodejs/v20.18.1/node-v20.18.1-x64.msi"
+    ],
+    "18.20.5": [
+        "https://nodejs.org/dist/v18.20.5/node-v18.20.5-x64.msi",
+        "https://registry.npmmirror.com/-/binary/node/v18.20.5/node-v18.20.5-x64.msi",
+        "https://repo.huaweicloud.com/nodejs/v18.20.5/node-v18.20.5-x64.msi"
+    ],
+    "16.20.2": [
+        "https://nodejs.org/dist/v16.20.2/node-v16.20.2-x64.msi",
+        "https://registry.npmmirror.com/-/binary/node/v16.20.2/node-v16.20.2-x64.msi",
+        "https://repo.huaweicloud.com/nodejs/v16.20.2/node-v16.20.2-x64.msi"
+    ],
+    "14.21.3": [
+        "https://nodejs.org/dist/v14.21.3/node-v14.21.3-x64.msi",
+        "https://registry.npmmirror.com/-/binary/node/v14.21.3/node-v14.21.3-x64.msi",
+        "https://repo.huaweicloud.com/nodejs/v14.21.3/node-v14.21.3-x64.msi"
+    ]
+}

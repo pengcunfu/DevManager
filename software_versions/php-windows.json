@@ -1,0 +1,27 @@
+{
+    "8.3.14": [
+        "https://windows.php.net/downloads/releases/php-8.3.14-Win32-vs16-x64.zip",
+        "https://registry.npmmirror.com/-/binary/php/php-8.3.14-Win32-vs16-x64.zip",
+        "https://repo.huaweicloud.com/php/php-8.3.14-Win32-vs16-x64.zip"
+    ],
+    "8.2.26": [
+        "https://windows.php.net/downloads/releases/php-8.2.26-Win32-vs16-x64.zip",
+        "https://registry.npmmirror.com/-/binary/php/php-8.2.26-Win32-vs16-x64.zip",
+        "https://repo.huaweicloud.com/php/php-8.2.26-Win32-vs16-x64.zip"
+    ],
+    "8.1.31": [
+        "https://windows.php.net/downloads/releases/php-8.1.31-Win32-vs16-x64.zip",
+        "https://registry.npmmirror.com/-/binary/php/php-8.1.31-Win32-vs16-x64.zip",
+        "https://repo.huaweicloud.com/php/php-8.1.31-Win32-vs16-x64.zip"
+    ],
+    "8.0.30": [
+        "https://windows.php.net/downloads/releases/php-8.0.30-Win32-vs16-x64.zip",
+        "https://registry.npmmirror.com/-/binary/php/php-8.0.30-Win32-vs16-x64.zip",
+        "https://repo.huaweicloud.com/php/php-8.0.30-Win32-vs16-x64.zip"
+    ],
+    "7.4.33": [
+        "https://windows.php.net/downloads/releases/php-7.4.33-Win32-vc15-x64.zip",
+        "https://registry.npmmirror.com/-/binary/php/php-7.4.33-Win32-vc15-x64.zip",
+        "https://repo.huaweicloud.com/php/php-7.4.33-Win32-vc15-x64.zip"
+    ]
+}

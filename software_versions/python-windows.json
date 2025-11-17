@@ -1,0 +1,32 @@
+{
+    "3.12.7": [
+        "https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe",
+        "https://registry.npmmirror.com/-/binary/python/3.12.7/python-3.12.7-amd64.exe",
+        "https://repo.huaweicloud.com/python/3.12.7/python-3.12.7-amd64.exe"
+    ],
+    "3.11.10": [
+        "https://www.python.org/ftp/python/3.11.10/python-3.11.10-amd64.exe",
+        "https://registry.npmmirror.com/-/binary/python/3.11.10/python-3.11.10-amd64.exe",
+        "https://repo.huaweicloud.com/python/3.11.10/python-3.11.10-amd64.exe"
+    ],
+    "3.10.15": [
+        "https://www.python.org/ftp/python/3.10.15/python-3.10.15-amd64.exe",
+        "https://registry.npmmirror.com/-/binary/python/3.10.15/python-3.10.15-amd64.exe",
+        "https://repo.huaweicloud.com/python/3.10.15/python-3.10.15-amd64.exe"
+    ],
+    "3.9.20": [
+        "https://www.python.org/ftp/python/3.9.20/python-3.9.20-amd64.exe",
+        "https://registry.npmmirror.com/-/binary/python/3.9.20/python-3.9.20-amd64.exe",
+        "https://repo.huaweicloud.com/python/3.9.20/python-3.9.20-amd64.exe"
+    ],
+    "3.8.20": [
+        "https://www.python.org/ftp/python/3.8.20/python-3.8.20-amd64.exe",
+        "https://registry.npmmirror.com/-/binary/python/3.8.20/python-3.8.20-amd64.exe",
+        "https://repo.huaweicloud.com/python/3.8.20/python-3.8.20-amd64.exe"
+    ],
+    "3.7.9": [
+        "https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe",
+        "https://registry.npmmirror.com/-/binary/python/3.7.9/python-3.7.9-amd64.exe",
+        "https://repo.huaweicloud.com/python/3.7.9/python-3.7.9-amd64.exe"
+    ]
+}
