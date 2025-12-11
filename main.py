@@ -1,150 +1,46 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Python 脚本执行器
-扫描并执行 config_scripts 和 install_scripts 目录下的脚本
+DevManager - 开发工具箱
+提供常用开发工具的图形化界面
 """
 
 import sys
-import subprocess
+import os
 from pathlib import Path
-from typing import List, Dict
-
+from typing import Dict, Optional
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QListWidget, QTextEdit, QLabel, QSplitter,
-    QGroupBox, QLineEdit, QComboBox, QMessageBox, QListWidgetItem
+    QPushButton, QLabel, QSplitter, QGroupBox, QMessageBox,
+    QStackedWidget, QListWidget, QListWidgetItem, QStyleFactory
 )
-from PySide6.QtCore import Qt, QThread, Signal, QProcess
-from PySide6.QtGui import QFont, QTextCursor
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QFont, QIcon
+
+# 导入各个工具页面
+try:
+    from app.pip_config_page import PipConfigPage
+except ImportError:
+    PipConfigPage = None
 
 
-class ScriptInfo:
-    """脚本信息类"""
-    
-    def __init__(self, path: Path, category: str):
-        self.path = path
-        self.name = path.stem
-        self.category = category
-        self.description = self._extract_description()
-    
-    def _extract_description(self) -> str:
-        """从脚本中提取描述信息"""
-        try:
-            with open(self.path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-                # 查找文档字符串
-                in_docstring = False
-                description_lines = []
-                
-                for line in lines[:20]:  # 只读取前20行
-                    if '"""' in line or "'''" in line:
-                        if in_docstring:
-                            break
-                        in_docstring = True
-                        # 提取同一行的内容
-                        content = line.split('"""')[1] if '"""' in line else line.split("'''")[1]
-                        if content.strip():
-                            description_lines.append(content.strip())
-                        continue
-                    
-                    if in_docstring:
-                        description_lines.append(line.strip())
-                
-                return ' '.join(description_lines[:2]) if description_lines else "无描述"
-        except Exception:
-            return "无描述"
+class ToolInfo:
+    """工具信息"""
+    def __init__(self, name: str, description: str, icon: str, widget_class=None):
+        self.name = name
+        self.description = description
+        self.icon = icon
+        self.widget_class = widget_class
 
 
-class ScriptRunner(QThread):
-    """脚本运行线程"""
-    
-    output_signal = Signal(str)
-    finished_signal = Signal(int)
-    
-    def __init__(self, script_path: Path, args: List[str] = None):
-        super().__init__()
-        self.script_path = script_path
-        self.args = args or []
-        self.process = None
-    
-    def run(self):
-        """运行脚本"""
-        try:
-            cmd = [sys.executable, str(self.script_path)] + self.args
-            
-            self.process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
-            )
-            
-            # 实时读取输出
-            for line in iter(self.process.stdout.readline, ''):
-                if line:
-                    self.output_signal.emit(line.rstrip())
-            
-            self.process.wait()
-            self.finished_signal.emit(self.process.returncode)
-            
-        except Exception as e:
-            self.output_signal.emit(f"错误: {str(e)}")
-            self.finished_signal.emit(-1)
-    
-    def stop(self):
-        """停止脚本执行"""
-        if self.process:
-            self.process.terminate()
-            self.process.wait(timeout=3)
+class DevManagerWindow(QMainWindow):
+    """开发工具箱主窗口"""
 
-
-class ScriptLauncher(QMainWindow):
-    """脚本启动器主窗口"""
-    
     def __init__(self):
         super().__init__()
-        self.scripts: Dict[str, List[ScriptInfo]] = {
-            'config_scripts': [],
-            'install_scripts': []
-        }
-        self.current_runner = None
-        
+        self.tools = {}
+        self.init_tools()
         self.init_ui()
-        self.scan_scripts()
-    
-    def init_ui(self):
-        """初始化用户界面"""
-        self.setWindowTitle("Python 脚本执行器")
-        self.setGeometry(100, 100, 1200, 800)
-        
-        # 创建中心部件
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
-        # 主布局
-        main_layout = QHBoxLayout(central_widget)
-        
-        # 创建分割器
-        splitter = QSplitter(Qt.Horizontal)
-        
-        # 左侧面板 - 脚本列表
-        left_panel = self.create_left_panel()
-        splitter.addWidget(left_panel)
-        
-        # 右侧面板 - 执行区域
-        right_panel = self.create_right_panel()
-        splitter.addWidget(right_panel)
-        
-        # 设置分割器比例
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 2)
-        
-        main_layout.addWidget(splitter)
-        
-        # 设置样式
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #f5f5f5;
@@ -152,43 +48,44 @@ class ScriptLauncher(QMainWindow):
             QGroupBox {
                 font-weight: bold;
                 border: 2px solid #cccccc;
-                border-radius: 5px;
+                border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
+                background-color: white;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
+                left: 15px;
+                padding: 0 10px;
+                background-color: white;
             }
             QPushButton {
-                background-color: #4CAF50;
+                background-color: #2196F3;
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                padding: 12px 20px;
+                border-radius: 6px;
                 font-size: 14px;
+                font-weight: bold;
+                min-height: 20px;
             }
             QPushButton:hover {
-                background-color: #45a049;
+                background-color: #1976D2;
             }
             QPushButton:pressed {
-                background-color: #3d8b40;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #666666;
+                background-color: #0D47A1;
             }
             QListWidget {
-                border: 1px solid #cccccc;
-                border-radius: 4px;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
                 background-color: white;
                 outline: none;
+                font-size: 14px;
             }
             QListWidget::item {
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid #eeeeee;
+                padding: 15px;
+                border-bottom: 1px solid #f0f0f0;
+                border-radius: 0px;
             }
             QListWidget::item:selected {
                 background-color: #2196F3;
@@ -200,300 +97,325 @@ class ScriptLauncher(QMainWindow):
                 background-color: #e3f2fd;
             }
             QListWidget:focus {
-                border: 1px solid #2196F3;
+                border: 2px solid #2196F3;
                 outline: none;
             }
-            QTextEdit {
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 12px;
-            }
-            QLineEdit {
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 6px;
-                background-color: white;
-            }
-            QComboBox {
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 6px;
-                background-color: white;
-            }
         """)
-    
+
+    def init_tools(self):
+        """初始化工具列表"""
+        # Pip 镜像源配置工具
+        if PipConfigPage:
+            self.tools['pip'] = ToolInfo(
+                name='Pip 镜像源配置',
+                description='配置和管理 Python Pip 包管理器的国内镜像源，支持速度测试',
+                icon='🐍',
+                widget_class=PipConfigPage
+            )
+
+        # 预留其他工具位置
+        # self.tools['npm'] = ToolInfo(
+        #     name='NPM 镜像源配置',
+        #     description='配置 Node.js NPM 包管理器的镜像源',
+        #     icon='📦',
+        #     widget_class=NpmConfigPage
+        # )
+
+        # self.tools['maven'] = ToolInfo(
+        #     name='Maven 仓库配置',
+        #     description='配置 Java Maven 依赖管理器的镜像仓库',
+        #     icon='☕',
+        #     widget_class=MavenConfigPage
+        # )
+
+    def init_ui(self):
+        """初始化界面"""
+        self.setWindowTitle("DevManager - 开发工具箱")
+        self.setGeometry(200, 200, 1200, 800)
+
+        # 设置应用图标（如果有的话）
+        # if os.path.exists("icon.png"):
+        #     self.setWindowIcon(QIcon("icon.png"))
+
+        # 创建中央部件
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        # 主布局
+        main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+
+        # 创建分割器
+        splitter = QSplitter(Qt.Horizontal)
+        main_layout.addWidget(splitter)
+
+        # 左侧工具列表
+        left_panel = self.create_left_panel()
+        splitter.addWidget(left_panel)
+
+        # 右侧内容区域
+        right_panel = self.create_right_panel()
+        splitter.addWidget(right_panel)
+
+        # 设置分割器比例
+        splitter.setSizes([300, 900])
+
+        # 默认选择第一个工具
+        if self.tool_list.count() > 0:
+            self.tool_list.setCurrentRow(0)
+            self.on_tool_selected(self.tool_list.item(0))
+
     def create_left_panel(self) -> QWidget:
-        """创建左侧面板"""
+        """创建左侧工具列表面板"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        
+
         # 标题
-        title_label = QLabel("📂 可用脚本")
+        title = QLabel("🛠️ 开发工具箱")
         title_font = QFont()
-        title_font.setPointSize(14)
+        title_font.setPointSize(18)
         title_font.setBold(True)
-        title_label.setFont(title_font)
-        layout.addWidget(title_label)
-        
-        # 分类选择
-        category_layout = QHBoxLayout()
-        category_label = QLabel("分类:")
-        self.category_combo = QComboBox()
-        self.category_combo.addItems(["全部", "配置脚本", "安装脚本"])
-        self.category_combo.currentTextChanged.connect(self.filter_scripts)
-        category_layout.addWidget(category_label)
-        category_layout.addWidget(self.category_combo)
-        layout.addLayout(category_layout)
-        
-        # 搜索框
-        search_layout = QHBoxLayout()
-        search_label = QLabel("搜索:")
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("输入脚本名称...")
-        self.search_input.textChanged.connect(self.filter_scripts)
-        search_layout.addWidget(search_label)
-        search_layout.addWidget(self.search_input)
-        layout.addLayout(search_layout)
-        
-        # 脚本列表
-        self.script_list = QListWidget()
-        self.script_list.itemDoubleClicked.connect(self.on_script_double_clicked)
-        self.script_list.currentItemChanged.connect(self.on_script_selected)
-        layout.addWidget(self.script_list)
-        
-        # 刷新按钮
-        refresh_btn = QPushButton("🔄 刷新脚本列表")
-        refresh_btn.clicked.connect(self.scan_scripts)
-        layout.addWidget(refresh_btn)
-        
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color: #333; margin: 10px 0;")
+        layout.addWidget(title)
+
+        # 工具列表
+        self.tool_list = QListWidget()
+        self.tool_list.setIconSize(QSize(24, 24))
+
+        # 添加工具到列表
+        for tool_id, tool_info in self.tools.items():
+            item = QListWidgetItem(f"{tool_info.icon} {tool_info.name}")
+            item.setToolTip(tool_info.description)
+            item.setData(Qt.UserRole, tool_id)
+            self.tool_list.addItem(item)
+
+        self.tool_list.currentItemChanged.connect(self.on_tool_selected)
+        layout.addWidget(self.tool_list)
+
+        # 底部信息
+        info_layout = QVBoxLayout()
+
+        version_label = QLabel("版本: v1.0.0")
+        version_label.setStyleSheet("color: #666; font-size: 12px;")
+        info_layout.addWidget(version_label)
+
+        # 统计信息
+        tool_count = len(self.tools)
+        stats_label = QLabel(f"可用工具: {tool_count} 个")
+        stats_label.setStyleSheet("color: #666; font-size: 12px;")
+        info_layout.addWidget(stats_label)
+
+        layout.addLayout(info_layout)
+
         return panel
-    
+
     def create_right_panel(self) -> QWidget:
-        """创建右侧面板"""
+        """创建右侧内容面板"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
-        
-        # 脚本信息组
-        info_group = QGroupBox("脚本信息")
-        info_layout = QVBoxLayout()
-        
-        self.script_name_label = QLabel("未选择脚本")
-        self.script_name_label.setFont(QFont("Arial", 12, QFont.Bold))
-        info_layout.addWidget(self.script_name_label)
-        
-        self.script_desc_label = QLabel("")
-        self.script_desc_label.setWordWrap(True)
-        info_layout.addWidget(self.script_desc_label)
-        
-        self.script_path_label = QLabel("")
-        self.script_path_label.setStyleSheet("color: #666666; font-size: 10px;")
-        info_layout.addWidget(self.script_path_label)
-        
-        info_group.setLayout(info_layout)
-        layout.addWidget(info_group)
-        
-        # 参数输入组
-        args_group = QGroupBox("命令行参数")
-        args_layout = QVBoxLayout()
-        
-        args_hint = QLabel("常用参数: --help, --list, --show, --test")
-        args_hint.setStyleSheet("color: #666666; font-size: 10px;")
-        args_layout.addWidget(args_hint)
-        
-        self.args_input = QLineEdit()
-        self.args_input.setPlaceholderText("例如: --list 或 --help")
-        args_layout.addWidget(self.args_input)
-        
-        args_group.setLayout(args_layout)
-        layout.addWidget(args_group)
-        
-        # 控制按钮
-        button_layout = QHBoxLayout()
-        
-        self.run_btn = QPushButton("▶ 运行脚本")
-        self.run_btn.clicked.connect(self.run_script)
-        self.run_btn.setEnabled(False)
-        button_layout.addWidget(self.run_btn)
-        
-        self.stop_btn = QPushButton("⏹ 停止")
-        self.stop_btn.clicked.connect(self.stop_script)
-        self.stop_btn.setEnabled(False)
-        self.stop_btn.setStyleSheet("QPushButton { background-color: #f44336; }")
-        button_layout.addWidget(self.stop_btn)
-        
-        self.clear_btn = QPushButton("🗑 清空输出")
-        self.clear_btn.clicked.connect(self.clear_output)
-        button_layout.addWidget(self.clear_btn)
-        
-        layout.addLayout(button_layout)
-        
-        # 输出区域
-        output_group = QGroupBox("执行输出")
-        output_layout = QVBoxLayout()
-        
-        self.output_text = QTextEdit()
-        self.output_text.setReadOnly(True)
-        output_layout.addWidget(self.output_text)
-        
-        output_group.setLayout(output_layout)
-        layout.addWidget(output_group)
-        
+
+        # 创建堆叠窗口来显示不同的工具页面
+        self.stacked_widget = QStackedWidget()
+
+        # 添加欢迎页面
+        welcome_widget = self.create_welcome_page()
+        self.stacked_widget.addWidget(welcome_widget)
+
+        # 添加工具页面
+        for tool_id, tool_info in self.tools.items():
+            if tool_info.widget_class:
+                try:
+                    tool_widget = tool_info.widget_class()
+                    self.stacked_widget.addWidget(tool_widget)
+                except Exception as e:
+                    # 如果工具页面加载失败，显示错误页面
+                    error_widget = self.create_error_page(tool_info.name, str(e))
+                    self.stacked_widget.addWidget(error_widget)
+                    print(f"加载工具 {tool_info.name} 失败: {e}")
+
+        layout.addWidget(self.stacked_widget)
+
         return panel
-    
-    def scan_scripts(self):
-        """扫描脚本目录"""
-        self.scripts = {
-            'config_scripts': [],
-            'install_scripts': []
-        }
-        
-        base_dir = Path(__file__).parent
-        
-        # 扫描配置脚本
-        config_dir = base_dir / "config_scripts"
-        if config_dir.exists():
-            for script_file in config_dir.glob("*.py"):
-                if script_file.name != "__init__.py":
-                    self.scripts['config_scripts'].append(
-                        ScriptInfo(script_file, "配置脚本")
-                    )
-        
-        # 扫描安装脚本
-        install_dir = base_dir / "install_scripts"
-        if install_dir.exists():
-            for script_file in install_dir.glob("*.py"):
-                if script_file.name != "__init__.py":
-                    self.scripts['install_scripts'].append(
-                        ScriptInfo(script_file, "安装脚本")
-                    )
-        
-        self.update_script_list()
-        self.append_output(f"✓ 扫描完成: 找到 {len(self.scripts['config_scripts'])} 个配置脚本, "
-                          f"{len(self.scripts['install_scripts'])} 个安装脚本")
-    
-    def update_script_list(self):
-        """更新脚本列表显示"""
-        self.script_list.clear()
-        
-        category = self.category_combo.currentText()
-        search_text = self.search_input.text().lower()
-        
-        # 添加配置脚本
-        if category in ["全部", "配置脚本"]:
-            for script in self.scripts['config_scripts']:
-                if search_text in script.name.lower():
-                    item = QListWidgetItem(f"⚙️ {script.name}")
-                    item.setData(Qt.UserRole, script)
-                    self.script_list.addItem(item)
-        
-        # 添加安装脚本
-        if category in ["全部", "安装脚本"]:
-            for script in self.scripts['install_scripts']:
-                if search_text in script.name.lower():
-                    item = QListWidgetItem(f"📦 {script.name}")
-                    item.setData(Qt.UserRole, script)
-                    self.script_list.addItem(item)
-    
-    def filter_scripts(self):
-        """过滤脚本列表"""
-        self.update_script_list()
-    
-    def on_script_selected(self, current, previous):
-        """脚本选择事件"""
-        if current:
-            script: ScriptInfo = current.data(Qt.UserRole)
-            self.script_name_label.setText(f"📄 {script.name}")
-            self.script_desc_label.setText(script.description)
-            self.script_path_label.setText(f"路径: {script.path}")
-            self.run_btn.setEnabled(True)
-        else:
-            self.script_name_label.setText("未选择脚本")
-            self.script_desc_label.setText("")
-            self.script_path_label.setText("")
-            self.run_btn.setEnabled(False)
-    
-    def on_script_double_clicked(self, item):
-        """双击脚本直接运行"""
-        self.run_script()
-    
-    def run_script(self):
-        """运行选中的脚本"""
-        current_item = self.script_list.currentItem()
+
+    def create_welcome_page(self) -> QWidget:
+        """创建欢迎页面"""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignCenter)
+
+        # 欢迎标题
+        title = QLabel("🎉 欢迎使用 DevManager")
+        title_font = QFont()
+        title_font.setPointSize(24)
+        title_font.setBold(True)
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color: #2196F3; margin: 20px 0;")
+        layout.addWidget(title)
+
+        # 副标题
+        subtitle = QLabel("专业的开发工具集合")
+        subtitle_font = QFont()
+        subtitle_font.setPointSize(16)
+        subtitle.setFont(subtitle_font)
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setStyleSheet("color: #666; margin: 10px 0;")
+        layout.addWidget(subtitle)
+
+        # 说明文字
+        description = QLabel("""
+        DevManager 是一个集成了常用开发工具的管理器，
+        提供图形化界面来配置和管理各种开发环境工具。
+
+        请从左侧选择一个工具开始使用。
+        """)
+        description.setAlignment(Qt.AlignCenter)
+        description.setStyleSheet("""
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        """)
+        layout.addWidget(description)
+
+        # 功能特性
+        features_group = QGroupBox("✨ 主要特性")
+        features_layout = QVBoxLayout()
+
+        features = [
+            "🚀 简洁易用的图形界面",
+            "⚡ 快速配置开发环境",
+            "🛡️ 安全可靠的配置管理",
+            "🔧 持续更新和功能扩展"
+        ]
+
+        for feature in features:
+            label = QLabel(feature)
+            label.setStyleSheet("font-size: 14px; margin: 5px 0;")
+            features_layout.addWidget(label)
+
+        features_group.setLayout(features_layout)
+        layout.addWidget(features_group)
+
+        layout.addStretch()
+
+        return widget
+
+    def create_error_page(self, tool_name: str, error_msg: str) -> QWidget:
+        """创建错误页面"""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setAlignment(Qt.AlignCenter)
+
+        # 错误图标
+        error_label = QLabel("❌")
+        error_font = QFont()
+        error_font.setPointSize(48)
+        error_label.setFont(error_font)
+        error_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(error_label)
+
+        # 错误标题
+        title = QLabel(f"工具加载失败")
+        title_font = QFont()
+        title_font.setPointSize(20)
+        title_font.setBold(True)
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color: #f44336; margin: 20px 0;")
+        layout.addWidget(title)
+
+        # 工具名称
+        tool_label = QLabel(f"工具: {tool_name}")
+        tool_label.setAlignment(Qt.AlignCenter)
+        tool_label.setStyleSheet("color: #333; font-size: 16px; margin: 10px 0;")
+        layout.addWidget(tool_label)
+
+        # 错误信息
+        error_text = QLabel(f"错误信息: {error_msg}")
+        error_text.setAlignment(Qt.AlignCenter)
+        error_text.setStyleSheet("""
+            color: #666;
+            font-size: 14px;
+            margin: 20px;
+            padding: 15px;
+            background-color: #ffebee;
+            border-radius: 6px;
+            border: 1px solid #ffcdd2;
+        """)
+        error_text.setWordWrap(True)
+        layout.addWidget(error_text)
+
+        # 解决建议
+        suggestion = QLabel("💡 建议: 请检查相关依赖是否正确安装")
+        suggestion.setAlignment(Qt.AlignCenter)
+        suggestion.setStyleSheet("color: #ff9800; font-size: 14px; margin: 10px 0;")
+        layout.addWidget(suggestion)
+
+        layout.addStretch()
+
+        return widget
+
+    def on_tool_selected(self, current_item, previous_item=None):
+        """工具选择事件处理"""
         if not current_item:
+            self.stacked_widget.setCurrentIndex(0)  # 显示欢迎页面
             return
-        
-        script: ScriptInfo = current_item.data(Qt.UserRole)
-        args_text = self.args_input.text().strip()
-        args = args_text.split() if args_text else []
-        
-        self.clear_output()
-        self.append_output(f"{'='*60}")
-        self.append_output(f"运行脚本: {script.name}")
-        self.append_output(f"参数: {' '.join(args) if args else '(无)'}")
-        self.append_output(f"{'='*60}\n")
-        
-        # 创建并启动运行线程
-        self.current_runner = ScriptRunner(script.path, args)
-        self.current_runner.output_signal.connect(self.append_output)
-        self.current_runner.finished_signal.connect(self.on_script_finished)
-        self.current_runner.start()
-        
-        # 更新按钮状态
-        self.run_btn.setEnabled(False)
-        self.stop_btn.setEnabled(True)
-    
-    def stop_script(self):
-        """停止脚本执行"""
-        if self.current_runner:
-            self.append_output("\n⚠ 正在停止脚本...")
-            self.current_runner.stop()
-            self.current_runner = None
-            self.run_btn.setEnabled(True)
-            self.stop_btn.setEnabled(False)
-    
-    def on_script_finished(self, return_code):
-        """脚本执行完成"""
-        self.append_output(f"\n{'='*60}")
-        if return_code == 0:
-            self.append_output("✓ 脚本执行成功")
-        else:
-            self.append_output(f"✗ 脚本执行失败 (返回码: {return_code})")
-        self.append_output(f"{'='*60}\n")
-        
-        self.run_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self.current_runner = None
-    
-    def append_output(self, text: str):
-        """追加输出文本"""
-        self.output_text.append(text)
-        # 自动滚动到底部
-        cursor = self.output_text.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.output_text.setTextCursor(cursor)
-    
-    def clear_output(self):
-        """清空输出"""
-        self.output_text.clear()
+
+        tool_id = current_item.data(Qt.UserRole)
+        if tool_id in self.tools:
+            # 计算在堆叠窗口中的索引
+            # 索引 0 是欢迎页面，所以工具页面从 1 开始
+            tool_index = list(self.tools.keys()).index(tool_id) + 1
+            self.stacked_widget.setCurrentIndex(tool_index)
 
 
 def main():
     """主函数"""
     app = QApplication(sys.argv)
-    
+
     # 设置应用程序信息
-    app.setApplicationName("Python 脚本执行器")
-    app.setOrganizationName("PyInstallDevTools")
-    
+    app.setApplicationName("DevManager")
+    app.setApplicationDisplayName("DevManager - 开发工具箱")
+    app.setOrganizationName("DevTools")
+    app.setApplicationVersion("1.0.0")
+
+    # 设置应用程序样式
+    app.setStyle(QStyleFactory.create('windowsvista'))
+
+    # 设置全局字体
+    font = QFont("Microsoft YaHei", 9)
+    app.setFont(font)
+
     # 创建并显示主窗口
-    window = ScriptLauncher()
-    window.show()
-    
-    sys.exit(app.exec())
+    try:
+        window = DevManagerWindow()
+        window.show()
+
+        # 运行应用程序
+        sys.exit(app.exec())
+
+    except Exception as e:
+        QMessageBox.critical(
+            None,
+            "启动错误",
+            f"程序启动失败:\n\n{str(e)}\n\n请检查环境和依赖是否正确安装。"
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n用户中断程序")
+        sys.exit(0)
+    except Exception as e:
+        print(f"程序执行出错: {e}")
+        sys.exit(1)
