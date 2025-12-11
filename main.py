@@ -23,6 +23,11 @@ try:
 except ImportError:
     PipConfigTab = None
 
+try:
+    from app.npm_config_tab import NpmConfigTab
+except ImportError:
+    NpmConfigTab = None
+
 
 class ToolInfo:
     """工具信息"""
@@ -53,13 +58,14 @@ class DevManagerWindow(QMainWindow):
                 widget_class=PipConfigTab
             )
 
-        # 预留其他工具位置
-        # self.tools['npm'] = ToolInfo(
-        #     name='NPM 镜像源配置',
-        #     description='配置 Node.js NPM 包管理器的镜像源',
-        #     icon='📦',
-        #     widget_class=NpmConfigPage
-        # )
+        # NPM 镜像源配置工具
+        if NpmConfigTab:
+            self.tools['npm'] = ToolInfo(
+                name='NPM 镜像源配置',
+                description='配置和管理 Node.js NPM 包管理器的国内镜像源，支持速度测试',
+                icon='📦',
+                widget_class=NpmConfigTab
+            )
 
         # self.tools['maven'] = ToolInfo(
         #     name='Maven 仓库配置',
