@@ -7,6 +7,7 @@ DevManager - 开发工具箱
 
 import sys
 import os
+import platform
 from pathlib import Path
 from typing import Dict, Optional
 from PySide6.QtWidgets import (
@@ -58,6 +59,85 @@ try:
     from app.manager.mongodb.mongodb_tab import MongoDBTab
 except ImportError:
     MongoDBTab = None
+
+try:
+    from app.manager.postgresql.postgresql_tab import PostgreSQLTab
+except ImportError:
+    PostgreSQLTab = None
+
+
+def is_admin() -> bool:
+    """检查是否具有管理员权限"""
+    try:
+        if platform.system() == "Windows":
+            import ctypes
+            return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        else:
+            # Linux/macOS: 检查是否为root用户
+            return os.geteuid() == 0
+    except Exception:
+        return False
+
+
+def require_admin_privileges() -> bool:
+    """检查管理员权限，如果没有则显示提示并返回False"""
+    if not is_admin():
+        # 创建一个临时的QApplication来显示消息框
+        temp_app = QApplication.instance()
+        if temp_app is None:
+            temp_app = QApplication(sys.argv)
+
+        msg_box = QMessageBox()
+        msg_box.setIconPixmap(QMessageBox.style().standardIcon(
+            QMessageBox.style().SP_MessageBoxWarning).pixmap(64, 64))
+        msg_box.setWindowTitle("权限提示")
+        msg_box.setText("DevManager 检测到当前未以管理员权限运行")
+        msg_box.setInformativeText(
+            "DevManager 的部分功能（如安装系统服务、修改系统配置等）\n"
+            "需要管理员权限才能正常工作。\n\n"
+            "建议：\n"
+            "• 以管理员身份运行以获得完整功能\n"
+            "• 继续以当前权限运行（部分功能受限）"
+        )
+
+        restart_btn = msg_box.addButton("以管理员身份重新启动", QMessageBox.ActionRole)
+        continue_btn = msg_box.addButton("继续运行", QMessageBox.AcceptRole)
+        exit_btn = msg_box.addButton("退出程序", QMessageBox.RejectRole)
+
+        msg_box.setDefaultButton(restart_btn)
+        msg_box.exec()
+
+        if msg_box.clickedButton() == restart_btn:
+            # 尝试以管理员权限重新启动程序
+            try:
+                if platform.system() == "Windows":
+                    import ctypes
+                    # 获取当前脚本的完整路径
+                    script_path = os.path.abspath(sys.argv[0])
+                    # 使用ShellExecuteW以管理员权限重新启动
+                    ctypes.windll.shell32.ShellExecuteW(
+                        None, "runas", "python", f'"{script_path}"', None, 1
+                    )
+                else:
+                    # Linux/macOS 使用sudo重新启动
+                    script_path = os.path.abspath(sys.argv[0])
+                    os.execlp("sudo", "sudo", "python3", script_path)
+                return True
+            except Exception as e:
+                QMessageBox.critical(
+                    None,
+                    "启动失败",
+                    f"无法以管理员权限重新启动程序:\n{str(e)}"
+                )
+                return False
+        elif msg_box.clickedButton() == continue_btn:
+            # 继续以当前权限运行
+            return True
+        else:
+            # 退出程序
+            return False
+
+    return True
 
 
 class ToolInfo:
@@ -150,6 +230,15 @@ class DevManagerWindow(QMainWindow):
                 description='MongoDB文档数据库的安装、配置、服务管理和监控',
                 icon='🍃',
                 widget_class=MongoDBTab
+            )
+
+        # PostgreSQL 管理工具
+        if PostgreSQLTab:
+            self.tools['postgresql'] = ToolInfo(
+                name='PostgreSQL 管理器',
+                description='PostgreSQL关系型数据库的安装、配置、服务管理和监控',
+                icon='🐘',
+                widget_class=PostgreSQLTab
             )
 
     def init_ui(self):
@@ -398,12 +487,21 @@ class DevManagerWindow(QMainWindow):
 
         # 版本信息
         version_label = QLabel("v1.0.0")
-        
+
         # 工具统计信息
         tool_count = len(self.tools)
         stats_label = QLabel(f"可用工具: {tool_count} 个")
-        
+
+        # 权限状态
+        if is_admin():
+            permission_label = QLabel("🔑 管理员权限")
+            permission_label.setStyleSheet("color: green; font-weight: bold;")
+        else:
+            permission_label = QLabel("⚠️ 普通权限")
+            permission_label.setStyleSheet("color: orange; font-weight: bold;")
+
         # 添加到状态栏
+        status_bar.addPermanentWidget(permission_label)
         status_bar.addPermanentWidget(stats_label)
         status_bar.addPermanentWidget(version_label)
 
@@ -488,6 +586,7 @@ class AboutDialog(QDialog):
             '• Redis 管理器 - Redis内存数据库的安装、配置和服务管理\n'
             '• MinIO 管理器 - MinIO对象存储的安装、配置和服务管理\n'
             '• MongoDB 管理器 - MongoDB文档数据库的安装、配置和服务管理\n'
+            '• PostgreSQL 管理器 - PostgreSQL关系型数据库的安装、配置和服务管理\n'
             '• 速度测试 - 测试各镜像源响应速度并推荐最佳选择\n'
             '• 一键配置 - 简单快捷的镜像源配置体验'
         )
@@ -523,6 +622,12 @@ class AboutDialog(QDialog):
 
 def main():
     """主函数"""
+
+    # 首先检查管理员权限
+    if not require_admin_privileges():
+        # 如果用户拒绝或重新启动失败，直接退出
+        return
+
     app = QApplication(sys.argv)
 
     # 设置应用程序信息
