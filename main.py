@@ -44,6 +44,11 @@ try:
 except ImportError:
     MySQLTab = None
 
+try:
+    from app.manager.redis.redis_tab import RedisTab
+except ImportError:
+    RedisTab = None
+
 
 class ToolInfo:
     """工具信息"""
@@ -108,6 +113,15 @@ class DevManagerWindow(QMainWindow):
                 description='MySQL数据库的安装、配置、服务管理和监控',
                 icon='🐬',
                 widget_class=MySQLTab
+            )
+
+        # Redis 管理工具
+        if RedisTab:
+            self.tools['redis'] = ToolInfo(
+                name='Redis 管理器',
+                description='Redis内存数据库的安装、配置、服务管理和监控',
+                icon='🔴',
+                widget_class=RedisTab
             )
 
     def init_ui(self):
@@ -450,6 +464,7 @@ class AboutDialog(QDialog):
             '• Composer 管理器 - 安装和配置 PHP 包管理器\n'
             '• Maven 镜像源配置 - 管理 Java Maven 依赖管理器的国内镜像源\n'
             '• MySQL 管理器 - MySQL数据库的安装、配置和服务管理\n'
+            '• Redis 管理器 - Redis内存数据库的安装、配置和服务管理\n'
             '• 速度测试 - 测试各镜像源响应速度并推荐最佳选择\n'
             '• 一键配置 - 简单快捷的镜像源配置体验'
         )
