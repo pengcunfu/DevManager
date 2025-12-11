@@ -173,10 +173,16 @@ class DevManagerWindow(QMainWindow):
 
         # 主布局
         main_layout = QHBoxLayout(central_widget)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+
+        # 设置主布局的边距，使布局更紧凑
+        main_layout.setContentsMargins(3, 3, 3, 3)  # 减少主布局边距
+        main_layout.setSpacing(3)  # 减少控件间距
 
         # 创建分割器
         splitter = QSplitter(Qt.Horizontal)
+        # 设置分割器样式，减少分割线宽度和边距
+        splitter.setHandleWidth(1)  # 设置分割线宽度为3像素
+        splitter.setChildrenCollapsible(False)  # 禁止子组件折叠
         main_layout.addWidget(splitter)
 
         # 左侧工具列表
@@ -200,10 +206,17 @@ class DevManagerWindow(QMainWindow):
         panel = QWidget()
         layout = QVBoxLayout(panel)
 
-        
+        # 设置统一的边距和间距，确保与右侧面板对齐
+        layout.setContentsMargins(0, 0, 0, 0)  # 去掉面板本身的边距
+        layout.setSpacing(0)
+
         # 工具列表
         self.tool_list = QListWidget()
         self.tool_list.setIconSize(QSize(24, 24))
+        # 设置工具列表的边距
+        self.tool_list.setContentsMargins(0, 0, 0, 0)
+        # 去掉边框
+        self.tool_list.setFrameShape(QFrame.NoFrame)
 
         # 添加工具到列表
         for tool_id, tool_info in self.tools.items():
@@ -220,10 +233,17 @@ class DevManagerWindow(QMainWindow):
     def create_right_panel(self) -> QWidget:
         """创建右侧内容面板"""
         panel = QWidget()
+
         layout = QVBoxLayout(panel)
+
+        # 设置统一的边距和间距，确保与左侧面板对齐
+        layout.setContentsMargins(0, 0, 0, 0)  # 去掉面板本身的边距
+        layout.setSpacing(0)
 
         # 创建堆叠窗口来显示不同的工具页面
         self.stacked_widget = QStackedWidget()
+        # 设置堆叠窗口的边距
+        self.stacked_widget.setContentsMargins(0, 0, 0, 0)
 
         # 添加欢迎页面
         welcome_widget = self.create_welcome_page()
@@ -249,6 +269,8 @@ class DevManagerWindow(QMainWindow):
         """创建欢迎页面"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setContentsMargins(20, 20, 20, 20)  # 添加适当的内边距
+        layout.setSpacing(10)  # 添加适当的间距
         layout.setAlignment(Qt.AlignCenter)
 
         # 欢迎标题
@@ -304,6 +326,8 @@ class DevManagerWindow(QMainWindow):
         """创建错误页面"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
+        layout.setContentsMargins(20, 20, 20, 20)  # 添加适当的内边距
+        layout.setSpacing(10)  # 添加适当的间距
         layout.setAlignment(Qt.AlignCenter)
 
         # 错误图标
@@ -478,7 +502,7 @@ class AboutDialog(QDialog):
         layout.addWidget(author_label)
 
         # 版权信息
-        copyright_label = QLabel('© 2024 DevTools. All rights reserved.')
+        copyright_label = QLabel('© 2025 DevTools. All rights reserved.')
         copyright_font = QFont()
         copyright_font.setPointSize(10)
         copyright_label.setFont(copyright_font)

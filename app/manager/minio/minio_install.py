@@ -25,7 +25,7 @@ class MinIOInstaller:
         """初始化安装器"""
         self.system = platform.system().lower()
         self.architecture = platform.machine().lower()
-        self.minio_version = "RELEASE.2024-01-16T16-07-38Z"
+        self.minio_version = "RELEASE.2025-01-16T16-07-38Z"
         self.installation_path = self._get_default_installation_path()
         self.service_name = "MinIO" if self.system == "windows" else "minio"
 
