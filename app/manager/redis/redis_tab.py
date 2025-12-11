@@ -576,11 +576,37 @@ class RedisTab(QWidget):
         config = self.config_manager.get_current_config()
 
         if config:
-            self.port_spin.setValue(int(config.get('port', 6379)))
-            self.bind_edit.setText(config.get('bind', '127.0.0.1'))
-            self.timeout_spin.setValue(int(config.get('timeout', 300)))
-            self.max_memory_combo.setCurrentText(config.get('maxmemory', '256mb'))
-            self.databases_spin.setValue(int(config.get('databases', 16)))
+            # 安全地处理可能为None的值
+            port_value = config.get('port')
+            if port_value is not None:
+                try:
+                    self.port_spin.setValue(int(port_value))
+                except (ValueError, TypeError):
+                    self.port_spin.setValue(6379)
+            else:
+                self.port_spin.setValue(6379)
+
+            self.bind_edit.setText(config.get('bind', '127.0.0.1') or '127.0.0.1')
+
+            timeout_value = config.get('timeout')
+            if timeout_value is not None:
+                try:
+                    self.timeout_spin.setValue(int(timeout_value))
+                except (ValueError, TypeError):
+                    self.timeout_spin.setValue(300)
+            else:
+                self.timeout_spin.setValue(300)
+
+            self.max_memory_combo.setCurrentText(config.get('maxmemory', '256mb') or '256mb')
+
+            databases_value = config.get('databases')
+            if databases_value is not None:
+                try:
+                    self.databases_spin.setValue(int(databases_value))
+                except (ValueError, TypeError):
+                    self.databases_spin.setValue(16)
+            else:
+                self.databases_spin.setValue(16)
 
             self.config_file_label.setText(config.get('config_file', '未找到'))
             self.config_log.append(f"[{time.strftime('%H:%M:%S')}] 配置加载成功")
