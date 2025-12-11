@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QTextCursor
 
-from app.composer_config import ComposerConfigurator
+from .composer_config import ComposerConfigurator
 
 
 class ComposerMirrorTestThread(QThread):

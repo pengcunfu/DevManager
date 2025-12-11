@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QTextCursor
 
-from app.pip_config import PipConfigurator
+from .pip_config import PipConfigurator
 
 
 class MirrorTestThread(QThread):

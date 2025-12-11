@@ -12,7 +12,8 @@ from typing import Dict, Optional
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QSplitter, QGroupBox, QMessageBox,
-    QStackedWidget, QListWidget, QListWidgetItem, QStyleFactory
+    QStackedWidget, QListWidget, QListWidgetItem, QStyleFactory,
+    QMenuBar, QMenu, QDialog, QTextEdit, QFrame
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont, QIcon
@@ -92,6 +93,9 @@ class DevManagerWindow(QMainWindow):
         """初始化界面"""
         self.setWindowTitle("DevManager - 开发工具箱")
         self.setGeometry(200, 200, 1200, 800)
+
+        # 创建菜单栏
+        self.create_menu_bar()
 
         # 设置应用图标（如果有的话）
         # if os.path.exists("icon.png"):
@@ -334,6 +338,127 @@ class DevManagerWindow(QMainWindow):
             # 索引 0 是欢迎页面，所以工具页面从 1 开始
             tool_index = list(self.tools.keys()).index(tool_id) + 1
             self.stacked_widget.setCurrentIndex(tool_index)
+
+    def create_menu_bar(self):
+        """创建菜单栏"""
+        menubar = self.menuBar()
+
+        # 帮助菜单
+        help_menu = menubar.addMenu('帮助(&H)')
+
+        # 关于菜单项
+        about_action = help_menu.addAction('关于(&A)')
+        about_action.setShortcut('F1')
+        about_action.triggered.connect(self.show_about_dialog)
+
+    def show_about_dialog(self):
+        """显示关于对话框"""
+        dialog = AboutDialog(self)
+        dialog.exec()
+
+
+class AboutDialog(QDialog):
+    """关于对话框"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.init_ui()
+
+    def init_ui(self):
+        """初始化界面"""
+        self.setWindowTitle('关于 DevManager')
+        self.setFixedSize(500, 400)
+        self.setWindowFlags(Qt.Dialog | Qt.WindowCloseButtonHint)
+
+        layout = QVBoxLayout(self)
+
+        # 应用图标和标题
+        title_layout = QHBoxLayout()
+
+        # 图标（使用文本替代）
+        icon_label = QLabel('🛠️')
+        icon_font = QFont()
+        icon_font.setPointSize(48)
+        icon_label.setFont(icon_font)
+        icon_label.setAlignment(Qt.AlignCenter)
+        title_layout.addWidget(icon_label)
+
+        # 应用信息
+        info_layout = QVBoxLayout()
+
+        # 应用名称
+        app_name = QLabel('DevManager')
+        app_name_font = QFont()
+        app_name_font.setPointSize(24)
+        app_name_font.setBold(True)
+        app_name.setFont(app_name_font)
+        info_layout.addWidget(app_name)
+
+        # 应用描述
+        app_desc = QLabel('开发工具箱')
+        desc_font = QFont()
+        desc_font.setPointSize(14)
+        app_desc.setFont(desc_font)
+        info_layout.addWidget(app_desc)
+
+        # 版本信息
+        version_label = QLabel('版本: 1.0.0')
+        version_font = QFont()
+        version_font.setPointSize(12)
+        version_label.setFont(version_font)
+        info_layout.addWidget(version_label)
+
+        title_layout.addLayout(info_layout)
+        title_layout.addStretch()
+        layout.addLayout(title_layout)
+
+        # 分隔线
+        line = QLabel()
+        line.setFrameStyle(QFrame.HLine | QFrame.Sunken)
+        layout.addWidget(line)
+
+        # 功能描述
+        features_text = QTextEdit()
+        features_text.setReadOnly(True)
+        features_text.setMaximumHeight(150)
+        features_text.setPlainText(
+            'DevManager 是一个集成了常用开发工具的管理器，提供图形化界面来配置和管理各种开发环境工具。\n\n'
+            '主要功能：\n'
+            '• Pip 镜像源配置 - 管理 Python 包管理器的国内镜像源\n'
+            '• NPM 镜像源配置 - 管理 Node.js 包管理器的国内镜像源\n'
+            '• Composer 管理器 - 安装和配置 PHP 包管理器\n'
+            '• 速度测试 - 测试各镜像源响应速度并推荐最佳选择\n'
+            '• 一键配置 - 简单快捷的镜像源配置体验'
+        )
+        layout.addWidget(features_text)
+
+        # 作者信息
+        author_label = QLabel('作者: DevTools Team')
+        author_font = QFont()
+        author_font.setPointSize(11)
+        author_label.setFont(author_font)
+        author_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(author_label)
+
+        # 版权信息
+        copyright_label = QLabel('© 2024 DevTools. All rights reserved.')
+        copyright_font = QFont()
+        copyright_font.setPointSize(10)
+        copyright_label.setFont(copyright_font)
+        copyright_label.setAlignment(Qt.AlignCenter)
+        copyright_label.setStyleSheet('color: #666;')
+        layout.addWidget(copyright_label)
+
+        # 按钮
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+
+        ok_button = QPushButton('确定')
+        ok_button.setFixedWidth(80)
+        ok_button.clicked.connect(self.accept)
+        button_layout.addWidget(ok_button)
+
+        layout.addLayout(button_layout)
 
 
 def main():

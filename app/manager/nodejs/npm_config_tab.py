@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QTextCursor
 
-from app.npm_config import NpmConfigurator
+from .npm_config import NpmConfigurator
 
 
 class NpmMirrorTestThread(QThread):

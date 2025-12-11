@@ -18,8 +18,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QTextCursor
 
-from app.composer_config import ComposerConfigurator
-from app.composer_install import ComposerInstaller
+from .composer_config import ComposerConfigurator
+from .composer_install import ComposerInstaller
 
 
 class ComposerInstallThread(QThread):
@@ -241,7 +241,7 @@ class ComposerTab(QWidget):
 
     def create_config_tab(self) -> QWidget:
         """创建配置标签页"""
-        from app.composer_config_tab import ComposerConfigTab
+        from .composer_config_tab import ComposerConfigTab
         return ComposerConfigTab(self)
 
     def load_status(self):
