@@ -18,6 +18,9 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple, List
 import logging
 
+# 导入配置模块
+from . import redis_constants
+
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -29,25 +32,10 @@ class RedisInstaller:
     def __init__(self):
         """初始化安装器"""
         self.system = platform.system().lower()
-        self.redis_version = "7.2.3"
-        self.installation_path = self._get_default_installation_path()
-        self.download_url = self._get_download_url()
-
-    def _get_default_installation_path(self) -> str:
-        """获取默认安装路径"""
-        if self.system == "windows":
-            return r"C:\Redis"
-        else:
-            return "/opt/redis"
-
-    def _get_download_url(self) -> str:
-        """获取下载URL"""
-        if self.system == "windows":
-            # Windows 使用 MSYS2 编译的版本
-            return f"https://github.com/microsoftarchive/redis/releases/download/win-3.0.504/Redis-x64-3.0.504.msi"
-        else:
-            # Linux/macOS 使用源码编译
-            return f"http://download.redis.io/releases/redis-{self.redis_version}.tar.gz"
+        # 使用配置模块获取版本和安装路径
+        self.redis_version = redis_constants.get_version()
+        self.installation_path = redis_constants.get_install_path()
+        self.download_url = redis_constants.get_download_url()
 
     def check_redis_installed(self) -> bool:
         """检查 Redis 是否已安装"""
@@ -144,18 +132,18 @@ class RedisInstaller:
 
     def _try_package_manager(self) -> bool:
         """尝试使用包管理器安装"""
-        package_managers = {
-            'apt': ['sudo', 'apt', 'update', '&&', 'sudo', 'apt', 'install', '-y', 'redis-server'],
-            'yum': ['sudo', 'yum', 'install', '-y', 'redis'],
-            'dnf': ['sudo', 'dnf', 'install', '-y', 'redis'],
-            'brew': ['brew', 'install', 'redis']
-        }
+        package_managers = redis_constants.get_package_managers()
 
         for pm, cmd in package_managers.items():
             try:
-                if shutil.which(pm.split()[0]):
+                if shutil.which(pm):
                     logger.info(f"使用 {pm} 安装 Redis...")
-                    subprocess.run(cmd, check=True)
+                    # 配置返回的是字符串命令，需要转换为列表
+                    if isinstance(cmd, str):
+                        cmd_list = cmd.split()
+                    else:
+                        cmd_list = cmd
+                    subprocess.run(cmd_list, check=True)
                     return True
             except subprocess.CalledProcessError:
                 continue
@@ -241,17 +229,22 @@ class RedisInstaller:
 
     def _create_default_config_windows(self):
         """创建 Windows 默认配置文件"""
-        config_content = """# Redis Windows 配置文件
+        # 使用配置模块获取默认配置
+        default_config = redis_constants.get_default_config_options()
+        data_dirs = redis_constants.get_data_directories()
+        config_name = redis_constants.get_config_file_name()
+
+        config_content = f"""# Redis Windows 配置文件
 
 # 网络配置
-bind 127.0.0.1
-port 6379
+bind {default_config['bind']}
+port {default_config['port']}
 tcp-backlog 511
 timeout 300
 tcp-keepalive 300
 
 # 通用配置
-daemonize no
+daemonize {default_config['daemonize']}
 supervised no
 pidfile "C:/ProgramData/Redis/redis.pid"
 
@@ -260,17 +253,17 @@ loglevel notice
 logfile "C:/ProgramData/Redis/redis.log"
 
 # 数据库配置
-databases 16
+databases {default_config['databases']}
 
 # 快照配置
-save 900 1
-save 300 10
-save 60 10000
+save {default_config['save'][0]}
+save {default_config['save'][1]}
+save {default_config['save'][2]}
 stop-writes-on-bgsave-error yes
 rdbcompression yes
 rdbchecksum yes
 dbfilename dump.rdb
-dir "C:/ProgramData/Redis/"
+dir "{data_dirs[0]}/"
 
 # 复制配置
 replica-serve-stale-data yes
@@ -282,8 +275,8 @@ repl-diskless-sync-delay 5
 # requirepass your_password_here
 
 # 内存管理
-maxmemory 256mb
-maxmemory-policy allkeys-lru
+maxmemory {default_config['maxmemory']}
+maxmemory-policy {default_config['maxmemory_policy']}
 maxmemory-samples 5
 
 # AOF 配置
@@ -302,10 +295,15 @@ slowlog-max-len 128
 maxclients 10000
 """
 
-        config_dir = "C:/ProgramData/Redis"
+        config_dir = data_dirs[0].replace("data", "")  # 移除data子目录
+        if "ProgramData" in config_dir:
+            config_dir = config_dir.replace("\\data", "")
+        else:
+            config_dir = "C:/ProgramData/Redis"
+
         os.makedirs(config_dir, exist_ok=True)
 
-        config_file = os.path.join(config_dir, "redis.windows.conf")
+        config_file = os.path.join(config_dir, config_name)
         with open(config_file, 'w', encoding='utf-8') as f:
             f.write(config_content)
 
@@ -391,11 +389,11 @@ maxclients 10000
     def _install_windows_service(self) -> Tuple[bool, str]:
         """安装 Windows 服务"""
         try:
-            redis_server = os.path.join(self.installation_path, "bin", "redis-server.exe")
-            config_file = "C:/ProgramData/Redis/redis.windows.conf"
+            redis_server = os.path.join(self.installation_path, "bin", redis_constants.get_server_executable())
+            config_file = "C:/ProgramData/Redis/" + redis_constants.get_config_file_name()
 
             # 安装服务
-            cmd = [redis_server, '--service-install', config_file, '--service-name', 'Redis']
+            cmd = [redis_server, '--service-install', config_file, '--service-name', redis_constants.get_service_name()]
             result = subprocess.run(cmd, capture_output=True, text=True)
 
             if result.returncode == 0:
@@ -411,52 +409,29 @@ maxclients 10000
         try:
             if self.system == "linux":
                 # 创建 systemd 服务文件
-                service_content = """[Unit]
-Description=Redis In-Memory Data Store
-After=network.target
+                service_name = redis_constants.get_service_name()
+                service_template = redis_constants.get_systemd_service_template()
+                service_content = service_template.format(
+                    server_executable=redis_constants.get_server_executable(),
+                    client_executable=redis_constants.get_client_executable()
+                )
 
-[Service]
-User=redis
-Group=redis
-ExecStart=/usr/local/bin/redis-server /etc/redis/redis.conf
-ExecStop=/usr/local/bin/redis-cli shutdown
-Restart=always
-LimitNOFILE=65536
-
-[Install]
-WantedBy=multi-user.target
-"""
-
-                service_file = "/etc/systemd/system/redis.service"
-                with open('/tmp/redis.service', 'w') as f:
+                service_file = f"/etc/systemd/system/{service_name}.service"
+                with open(f'/tmp/{service_name}.service', 'w') as f:
                     f.write(service_content)
 
-                subprocess.run(['sudo', 'mv', '/tmp/redis.service', service_file], check=True)
+                subprocess.run(['sudo', 'mv', f'/tmp/{service_name}.service', service_file], check=True)
                 subprocess.run(['sudo', 'systemctl', 'daemon-reload'], check=True)
-                subprocess.run(['sudo', 'systemctl', 'enable', 'redis'], check=True)
+                subprocess.run(['sudo', 'systemctl', 'enable', service_name], check=True)
 
                 return True, "Redis systemd 服务安装成功"
 
             else:  # macOS
                 # 使用 launchd
-                plist_content = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>io.redis.redis-server</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/local/bin/redis-server</string>
-        <string>/usr/local/etc/redis.conf</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-</dict>
-</plist>
-"""
+                plist_template = redis_constants.get_launchd_plist_template()
+                plist_content = plist_template.format(
+                    server_executable=redis_constants.get_server_executable()
+                )
 
                 with open('/tmp/io.redis.redis-server.plist', 'w') as f:
                     f.write(plist_content)
@@ -471,11 +446,13 @@ WantedBy=multi-user.target
     def start_service(self) -> Tuple[bool, str]:
         """启动 Redis 服务"""
         try:
+            service_name = redis_constants.get_service_name()
+
             if self.system == "windows":
-                result = subprocess.run(['redis-server', '--service-start', '--service-name', 'Redis'],
+                result = subprocess.run([redis_constants.get_server_executable(), '--service-start', '--service-name', service_name],
                                       capture_output=True, text=True)
             elif self.system == "linux":
-                result = subprocess.run(['sudo', 'systemctl', 'start', 'redis'],
+                result = subprocess.run(['sudo', 'systemctl', 'start', service_name],
                                       capture_output=True, text=True)
             else:  # macOS
                 result = subprocess.run(['launchctl', 'start', 'io.redis.redis-server'],
@@ -494,11 +471,13 @@ WantedBy=multi-user.target
     def stop_service(self) -> Tuple[bool, str]:
         """停止 Redis 服务"""
         try:
+            service_name = redis_constants.get_service_name()
+
             if self.system == "windows":
-                result = subprocess.run(['redis-server', '--service-stop', '--service-name', 'Redis'],
+                result = subprocess.run([redis_constants.get_server_executable(), '--service-stop', '--service-name', service_name],
                                       capture_output=True, text=True)
             elif self.system == "linux":
-                result = subprocess.run(['sudo', 'systemctl', 'stop', 'redis'],
+                result = subprocess.run(['sudo', 'systemctl', 'stop', service_name],
                                       capture_output=True, text=True)
             else:  # macOS
                 result = subprocess.run(['launchctl', 'stop', 'io.redis.redis-server'],
