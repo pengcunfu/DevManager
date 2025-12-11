@@ -160,6 +160,9 @@ class DevManagerWindow(QMainWindow):
         # 创建菜单栏
         self.create_menu_bar()
 
+        # 创建状态栏
+        self.create_status_bar()
+
         # 设置应用图标（如果有的话）
         # if os.path.exists("icon.png"):
         #     self.setWindowIcon(QIcon("icon.png"))
@@ -197,16 +200,7 @@ class DevManagerWindow(QMainWindow):
         panel = QWidget()
         layout = QVBoxLayout(panel)
 
-        # 标题
-        title = QLabel("🛠️ 开发工具箱")
-        title_font = QFont()
-        title_font.setPointSize(18)
-        title_font.setBold(True)
-        title.setFont(title_font)
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #333; margin: 10px 0;")
-        layout.addWidget(title)
-
+        
         # 工具列表
         self.tool_list = QListWidget()
         self.tool_list.setIconSize(QSize(24, 24))
@@ -220,21 +214,6 @@ class DevManagerWindow(QMainWindow):
 
         self.tool_list.currentItemChanged.connect(self.on_tool_selected)
         layout.addWidget(self.tool_list)
-
-        # 底部信息
-        info_layout = QVBoxLayout()
-
-        version_label = QLabel("版本: v1.0.0")
-        version_label.setStyleSheet("color: #666; font-size: 12px;")
-        info_layout.addWidget(version_label)
-
-        # 统计信息
-        tool_count = len(self.tools)
-        stats_label = QLabel(f"可用工具: {tool_count} 个")
-        stats_label.setStyleSheet("color: #666; font-size: 12px;")
-        info_layout.addWidget(stats_label)
-
-        layout.addLayout(info_layout)
 
         return panel
 
@@ -413,6 +392,23 @@ class DevManagerWindow(QMainWindow):
         about_action = help_menu.addAction('关于(&A)')
         about_action.setShortcut('F1')
         about_action.triggered.connect(self.show_about_dialog)
+
+    def create_status_bar(self):
+        """创建状态栏"""
+        status_bar = self.statusBar()
+
+        # 版本信息
+        version_label = QLabel("v1.0.0")
+        version_label.setStyleSheet("color: #666; font-size: 11px; padding: 0 10px;")
+
+        # 工具统计信息
+        tool_count = len(self.tools)
+        stats_label = QLabel(f"可用工具: {tool_count} 个")
+        stats_label.setStyleSheet("color: #666; font-size: 11px; padding: 0 10px;")
+
+        # 添加到状态栏
+        status_bar.addPermanentWidget(stats_label)
+        status_bar.addPermanentWidget(version_label)
 
     def show_about_dialog(self):
         """显示关于对话框"""
