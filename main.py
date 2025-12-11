@@ -173,7 +173,7 @@ class DevManagerWindow(QMainWindow):
 
         # 主布局
         main_layout = QHBoxLayout(central_widget)
-        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setContentsMargins(5, 5, 5, 5)
 
         # 创建分割器
         splitter = QSplitter(Qt.Horizontal)
@@ -258,7 +258,6 @@ class DevManagerWindow(QMainWindow):
         title_font.setBold(True)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #2196F3; margin: 20px 0;")
         layout.addWidget(title)
 
         # 副标题
@@ -267,7 +266,6 @@ class DevManagerWindow(QMainWindow):
         subtitle_font.setPointSize(16)
         subtitle.setFont(subtitle_font)
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("color: #666; margin: 10px 0;")
         layout.addWidget(subtitle)
 
         # 说明文字
@@ -278,16 +276,6 @@ class DevManagerWindow(QMainWindow):
         请从左侧选择一个工具开始使用。
         """)
         description.setAlignment(Qt.AlignCenter)
-        description.setStyleSheet("""
-            color: #555;
-            font-size: 14px;
-            line-height: 1.6;
-            margin: 30px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-        """)
         layout.addWidget(description)
 
         # 功能特性
@@ -303,7 +291,6 @@ class DevManagerWindow(QMainWindow):
 
         for feature in features:
             label = QLabel(feature)
-            label.setStyleSheet("font-size: 14px; margin: 5px 0;")
             features_layout.addWidget(label)
 
         features_group.setLayout(features_layout)
@@ -334,34 +321,22 @@ class DevManagerWindow(QMainWindow):
         title_font.setBold(True)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #f44336; margin: 20px 0;")
         layout.addWidget(title)
 
         # 工具名称
         tool_label = QLabel(f"工具: {tool_name}")
         tool_label.setAlignment(Qt.AlignCenter)
-        tool_label.setStyleSheet("color: #333; font-size: 16px; margin: 10px 0;")
         layout.addWidget(tool_label)
 
         # 错误信息
         error_text = QLabel(f"错误信息: {error_msg}")
         error_text.setAlignment(Qt.AlignCenter)
-        error_text.setStyleSheet("""
-            color: #666;
-            font-size: 14px;
-            margin: 20px;
-            padding: 15px;
-            background-color: #ffebee;
-            border-radius: 6px;
-            border: 1px solid #ffcdd2;
-        """)
         error_text.setWordWrap(True)
         layout.addWidget(error_text)
 
         # 解决建议
         suggestion = QLabel("💡 建议: 请检查相关依赖是否正确安装")
         suggestion.setAlignment(Qt.AlignCenter)
-        suggestion.setStyleSheet("color: #ff9800; font-size: 14px; margin: 10px 0;")
         layout.addWidget(suggestion)
 
         layout.addStretch()
@@ -399,13 +374,11 @@ class DevManagerWindow(QMainWindow):
 
         # 版本信息
         version_label = QLabel("v1.0.0")
-        version_label.setStyleSheet("color: #666; font-size: 11px; padding: 0 10px;")
-
+        
         # 工具统计信息
         tool_count = len(self.tools)
         stats_label = QLabel(f"可用工具: {tool_count} 个")
-        stats_label.setStyleSheet("color: #666; font-size: 11px; padding: 0 10px;")
-
+        
         # 添加到状态栏
         status_bar.addPermanentWidget(stats_label)
         status_bar.addPermanentWidget(version_label)
@@ -510,7 +483,6 @@ class AboutDialog(QDialog):
         copyright_font.setPointSize(10)
         copyright_label.setFont(copyright_font)
         copyright_label.setAlignment(Qt.AlignCenter)
-        copyright_label.setStyleSheet('color: #666;')
         layout.addWidget(copyright_label)
 
         # 按钮

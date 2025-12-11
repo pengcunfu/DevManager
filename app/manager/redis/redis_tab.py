@@ -84,35 +84,10 @@ class RedisTab(QWidget):
         """初始化用户界面"""
         layout = QVBoxLayout()
 
-        # 创建标题
-        title_label = QLabel("Redis 内存数据库管理")
-        title_label.setAlignment(Qt.AlignCenter)
-        title_font = QFont()
-        title_font.setPointSize(16)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        layout.addWidget(title_label)
-
+        
         # 创建选项卡
         self.tab_widget = QTabWidget()
-        self.tab_widget.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #c0c0c0;
-                background-color: #ffffff;
-            }
-            QTabBar::tab {
-                background-color: #e0e0e0;
-                padding: 8px 16px;
-                margin-right: 2px;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-            }
-            QTabBar::tab:selected {
-                background-color: #ffffff;
-                border-bottom: 2px solid #0078d4;
-            }
-        """)
-
+        
         # 安装管理标签页
         self.install_tab = self.create_install_tab()
         self.tab_widget.addTab(self.install_tab, "安装管理")
@@ -474,8 +449,7 @@ class RedisTab(QWidget):
         status_layout = QHBoxLayout()
 
         self.status_label = QLabel("就绪")
-        self.status_label.setStyleSheet("color: green; font-weight: bold;")
-
+        
         status_layout.addWidget(QLabel("状态:"))
         status_layout.addWidget(self.status_label)
         status_layout.addStretch()
@@ -554,10 +528,8 @@ class RedisTab(QWidget):
         # 更新状态
         if success:
             self.status_label.setText("操作成功")
-            self.status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
             self.status_label.setText("操作失败")
-            self.status_label.setStyleSheet("color: red; font-weight: bold;")
 
         # 添加日志
         current_tab = self.tab_widget.currentIndex()
@@ -657,19 +629,14 @@ class RedisTab(QWidget):
         # 更新服务标签页
         if status['running']:
             self.service_status_label.setText("运行中")
-            self.service_status_label.setStyleSheet("color: green;")
         else:
             self.service_status_label.setText("已停止")
-            self.service_status_label.setStyleSheet("color: red;")
 
         self.service_enabled_label.setText("是" if status['enabled'] else "否")
 
         # 更新状态监控标签页
         self.redis_running_label.setText("运行中" if status['running'] else "已停止")
-        self.redis_running_label.setStyleSheet(
-            "color: green;" if status['running'] else "color: red;"
-        )
-
+        
         if status['version']:
             self.redis_version_label.setText(status['version'])
 

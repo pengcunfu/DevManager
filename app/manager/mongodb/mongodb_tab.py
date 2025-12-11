@@ -284,40 +284,10 @@ class MongoDBTab(QWidget):
 
         self.install_btn = QPushButton("安装 MongoDB")
         self.install_btn.clicked.connect(self.install_mongodb)
-        self.install_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-weight: bold;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
-
+        
         self.uninstall_btn = QPushButton("卸载 MongoDB")
         self.uninstall_btn.clicked.connect(self.uninstall_mongodb)
-        self.uninstall_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                color: white;
-                font-weight: bold;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #da190b;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
-
+        
         button_layout.addWidget(self.check_req_btn)
         button_layout.addWidget(self.install_btn)
         button_layout.addWidget(self.uninstall_btn)
@@ -328,7 +298,6 @@ class MongoDBTab(QWidget):
         # 安装状态
         self.install_status_label = QLabel("准备就绪")
         self.install_status_label.setAlignment(Qt.AlignCenter)
-        self.install_status_label.setStyleSheet("font-weight: bold; color: #666; padding: 10px;")
         layout.addWidget(self.install_status_label)
 
         # 进度条
@@ -378,58 +347,13 @@ class MongoDBTab(QWidget):
 
         self.start_service_btn = QPushButton("启动服务")
         self.start_service_btn.clicked.connect(self.start_service)
-        self.start_service_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
-
+        
         self.stop_service_btn = QPushButton("停止服务")
         self.stop_service_btn.clicked.connect(self.stop_service)
-        self.stop_service_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #ff9800;
-                color: white;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #e68900;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
-
+        
         self.restart_service_btn = QPushButton("重启服务")
         self.restart_service_btn.clicked.connect(self.restart_service)
-        self.restart_service_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #1976D2;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
-
+        
         control_layout.addWidget(self.start_service_btn, 0, 0)
         control_layout.addWidget(self.stop_service_btn, 0, 1)
         control_layout.addWidget(self.restart_service_btn, 0, 2)
@@ -454,19 +378,7 @@ class MongoDBTab(QWidget):
         # 测试按钮
         self.test_connection_btn = QPushButton("测试连接")
         self.test_connection_btn.clicked.connect(self.test_connection)
-        self.test_connection_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #9C27B0;
-                color: white;
-                font-weight: bold;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #7B1FA2;
-            }
-        """)
-
+        
         connection_layout.addWidget(self.test_connection_btn)
 
         layout.addWidget(connection_group)
@@ -486,7 +398,6 @@ class MongoDBTab(QWidget):
         # 服务状态
         self.service_status_label2 = QLabel("就绪")
         self.service_status_label2.setAlignment(Qt.AlignCenter)
-        self.service_status_label2.setStyleSheet("font-weight: bold; color: #666; padding: 10px;")
         layout.addWidget(self.service_status_label2)
 
         # 进度条
@@ -618,19 +529,7 @@ MongoDB配置说明:
 
         self.save_config_btn = QPushButton("保存配置")
         self.save_config_btn.clicked.connect(self.save_config)
-        self.save_config_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-weight: bold;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
-
+        
         button_layout.addWidget(self.validate_config_btn)
         button_layout.addWidget(self.save_config_btn)
         button_layout.addStretch()
@@ -712,27 +611,10 @@ MongoDB配置说明:
 
         self.refresh_monitor_btn = QPushButton("刷新信息")
         self.refresh_monitor_btn.clicked.connect(self.refresh_monitor_info)
-        self.refresh_monitor_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                font-weight: bold;
-                padding: 8px 16px;
-                border-radius: 4px;
-        """)
-
+        
         self.open_shell_btn = QPushButton("打开 Shell")
         self.open_shell_btn.clicked.connect(self.open_mongo_shell)
-        self.open_shell_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-weight: bold;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-        """)
-
+        
         button_layout.addWidget(self.refresh_monitor_btn)
         button_layout.addWidget(self.open_shell_btn)
         button_layout.addStretch()
@@ -761,24 +643,18 @@ MongoDB配置说明:
         # 更新界面显示
         if requirements.get('internet', False):
             self.internet_label.setText("✓ 可用")
-            self.internet_label.setStyleSheet("color: green;")
         else:
             self.internet_label.setText("✗ 不可用")
-            self.internet_label.setStyleSheet("color: red;")
 
         if requirements.get('disk_space', False):
             self.disk_label.setText("✓ 充足")
-            self.disk_label.setStyleSheet("color: green;")
         else:
             self.disk_label.setText("✗ 不足")
-            self.disk_label.setStyleSheet("color: red;")
 
         if requirements.get('admin_privileges', False):
             self.privileges_label.setText("✓ 具备管理员权限")
-            self.privileges_label.setStyleSheet("color: green;")
         else:
             self.privileges_label.setText("⚠ 缺少管理员权限")
-            self.privileges_label.setStyleSheet("color: orange;")
 
         # 更新按钮状态
         can_install = all(requirements.values())
@@ -852,10 +728,8 @@ MongoDB配置说明:
         # 更新状态
         if success:
             self.install_status_label.setText(f"✓ {message}")
-            self.install_status_label.setStyleSheet("color: green; font-weight: bold;")
         else:
             self.install_status_label.setText(f"✗ {message}")
-            self.install_status_label.setStyleSheet("color: red; font-weight: bold;")
 
         # 刷新状态
         self.refresh_status()
@@ -911,10 +785,8 @@ MongoDB配置说明:
         # 更新状态
         if success:
             self.service_status_label2.setText("✓ 连接测试成功")
-            self.service_status_label2.setStyleSheet("color: green; font-weight: bold;")
         else:
             self.service_status_label2.setText(f"✗ 连接测试失败: {message}")
-            self.service_status_label2.setStyleSheet("color: red; font-weight: bold;")
 
     def run_service_operation(self, operation: str):
         """运行服务操作"""
@@ -950,10 +822,8 @@ MongoDB配置说明:
         # 更新状态
         if success:
             self.service_status_label2.setText(f"✓ {message}")
-            self.service_status_label2.setStyleSheet("color: green; font-weight: bold;")
         else:
             self.service_status_label2.setText(f"✗ {message}")
-            self.service_status_label2.setStyleSheet("color: red; font-weight: bold;")
 
         # 刷新状态
         self.refresh_status()
@@ -1138,11 +1008,8 @@ MongoDB配置说明:
                 "已停止" if status == "stopped" else
                 "未知"
             )
-            color = "green" if status == "running" else "orange" if status == "stopped" else "red"
-            self.monitor_status_label.setStyleSheet(f"color: {color};")
         else:
             self.monitor_status_label.setText("未安装")
-            self.monitor_status_label.setStyleSheet("color: red;")
 
         # 更新运行时间
         self.monitor_uptime_label.setText("获取中...")
@@ -1225,26 +1092,21 @@ MongoDB配置说明:
                 "未知"
             )
 
-            color = "green" if status_text == "running" else "orange" if status_text == "stopped" else "red"
-            self.service_status_label.setStyleSheet(f"color: {color}; font-weight: bold;")
-
+            
             self.service_version_label.setText(version if version else "未安装")
             self.service_install_label.setText("已安装" if installed else "未安装")
 
             # 更新安装状态
             if installed:
                 self.install_status_label.setText("MongoDB已安装")
-                self.install_status_label.setStyleSheet("color: green; font-weight: bold;")
                 self.install_btn.setText("重新安装")
             else:
                 self.install_status_label.setText("MongoDB未安装")
-                self.install_status_label.setStyleSheet("color: red; font-weight: bold;")
                 self.install_btn.setText("安装 MongoDB")
 
         except Exception as e:
             self.service_status_label.setText("获取状态失败")
-            self.service_status_label.setStyleSheet("color: red; font-weight: bold;")
-
+            
     def update_install_progress(self, message: str):
         """更新安装进度"""
         self.install_status_label.setText(message)
