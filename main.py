@@ -49,6 +49,16 @@ try:
 except ImportError:
     RedisTab = None
 
+try:
+    from app.manager.minio.minio_tab import MinIOTab
+except ImportError:
+    MinIOTab = None
+
+try:
+    from app.manager.mongodb.mongodb_tab import MongoDBTab
+except ImportError:
+    MongoDBTab = None
+
 
 class ToolInfo:
     """工具信息"""
@@ -122,6 +132,24 @@ class DevManagerWindow(QMainWindow):
                 description='Redis内存数据库的安装、配置、服务管理和监控',
                 icon='🔴',
                 widget_class=RedisTab
+            )
+
+        # MinIO 管理工具
+        if MinIOTab:
+            self.tools['minio'] = ToolInfo(
+                name='MinIO 管理器',
+                description='MinIO对象存储的安装、配置、服务管理和监控',
+                icon='🪣',
+                widget_class=MinIOTab
+            )
+
+        # MongoDB 管理工具
+        if MongoDBTab:
+            self.tools['mongodb'] = ToolInfo(
+                name='MongoDB 管理器',
+                description='MongoDB文档数据库的安装、配置、服务管理和监控',
+                icon='🍃',
+                widget_class=MongoDBTab
             )
 
     def init_ui(self):
@@ -465,6 +493,8 @@ class AboutDialog(QDialog):
             '• Maven 镜像源配置 - 管理 Java Maven 依赖管理器的国内镜像源\n'
             '• MySQL 管理器 - MySQL数据库的安装、配置和服务管理\n'
             '• Redis 管理器 - Redis内存数据库的安装、配置和服务管理\n'
+            '• MinIO 管理器 - MinIO对象存储的安装、配置和服务管理\n'
+            '• MongoDB 管理器 - MongoDB文档数据库的安装、配置和服务管理\n'
             '• 速度测试 - 测试各镜像源响应速度并推荐最佳选择\n'
             '• 一键配置 - 简单快捷的镜像源配置体验'
         )
