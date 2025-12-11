@@ -1,0 +1,51 @@
+# 持续集成 - 确保编译不出错
+name: CI - 持续集成
+
+# 触发条件
+on:
+  push:
+    # branches: [ master ]
+    paths:
+      - 'main.py'
+      - 'scripts/build.py'
+      - 'requirements.txt'
+      - 'resources/**'
+      - '.github/workflows/**'
+  pull_request:
+    # branches: [ master ]
+    paths:
+      - 'main.py'
+      - 'scripts/build.py'
+      - 'requirements.txt'
+      - 'resources/**'
+      - '.github/workflows/**'
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Python 环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: 安装 Nuitka
+      run: |
+        pip install nuitka imageio
+
+    - name: 安装 MSVC 构建工具
+      uses: microsoft/setup-msbuild@v1.3
+
+    - name: Windows - 构建测试
+      run: |
+        python scripts/build.py
+      shell: cmd
