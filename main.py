@@ -28,6 +28,11 @@ try:
 except ImportError:
     NpmConfigTab = None
 
+try:
+    from app.composer_tab import ComposerTab
+except ImportError:
+    ComposerTab = None
+
 
 class ToolInfo:
     """工具信息"""
@@ -65,6 +70,15 @@ class DevManagerWindow(QMainWindow):
                 description='配置和管理 Node.js NPM 包管理器的国内镜像源，支持速度测试',
                 icon='📦',
                 widget_class=NpmConfigTab
+            )
+
+        # Composer 安装和配置工具
+        if ComposerTab:
+            self.tools['composer'] = ToolInfo(
+                name='Composer 管理器',
+                description='安装 Composer 并配置 PHP 包管理器的国内镜像源，支持速度测试',
+                icon='🎵',
+                widget_class=ComposerTab
             )
 
         # self.tools['maven'] = ToolInfo(
