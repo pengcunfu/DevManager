@@ -19,17 +19,17 @@ from PySide6.QtGui import QFont, QIcon
 
 # 导入各个工具页面
 try:
-    from app.pip_config_tab import PipConfigTab
+    from app.manager.python.pip_config_tab import PipConfigTab
 except ImportError:
     PipConfigTab = None
 
 try:
-    from app.npm_config_tab import NpmConfigTab
+    from app.manager.nodejs.npm_config_tab import NpmConfigTab
 except ImportError:
     NpmConfigTab = None
 
 try:
-    from app.composer_tab import ComposerTab
+    from app.manager.php.composer_tab import ComposerTab
 except ImportError:
     ComposerTab = None
 
