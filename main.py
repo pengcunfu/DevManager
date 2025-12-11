@@ -34,6 +34,11 @@ try:
 except ImportError:
     ComposerTab = None
 
+try:
+    from app.manager.java.maven_config_tab import MavenConfigTab
+except ImportError:
+    MavenConfigTab = None
+
 
 class ToolInfo:
     """工具信息"""
@@ -82,12 +87,14 @@ class DevManagerWindow(QMainWindow):
                 widget_class=ComposerTab
             )
 
-        # self.tools['maven'] = ToolInfo(
-        #     name='Maven 仓库配置',
-        #     description='配置 Java Maven 依赖管理器的镜像仓库',
-        #     icon='☕',
-        #     widget_class=MavenConfigPage
-        # )
+        # Maven 镜像源配置工具
+        if MavenConfigTab:
+            self.tools['maven'] = ToolInfo(
+                name='Maven 镜像源配置',
+                description='配置和管理 Java Maven 依赖管理器的国内镜像源，支持速度测试',
+                icon='☕',
+                widget_class=MavenConfigTab
+            )
 
     def init_ui(self):
         """初始化界面"""
@@ -427,6 +434,7 @@ class AboutDialog(QDialog):
             '• Pip 镜像源配置 - 管理 Python 包管理器的国内镜像源\n'
             '• NPM 镜像源配置 - 管理 Node.js 包管理器的国内镜像源\n'
             '• Composer 管理器 - 安装和配置 PHP 包管理器\n'
+            '• Maven 镜像源配置 - 管理 Java Maven 依赖管理器的国内镜像源\n'
             '• 速度测试 - 测试各镜像源响应速度并推荐最佳选择\n'
             '• 一键配置 - 简单快捷的镜像源配置体验'
         )
