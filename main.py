@@ -19,9 +19,9 @@ from PySide6.QtGui import QFont, QIcon
 
 # 导入各个工具页面
 try:
-    from app.pip_config_page import PipConfigPage
+    from app.pip_config_tab import PipConfigTab
 except ImportError:
-    PipConfigPage = None
+    PipConfigTab = None
 
 
 class ToolInfo:
@@ -41,76 +41,16 @@ class DevManagerWindow(QMainWindow):
         self.tools = {}
         self.init_tools()
         self.init_ui()
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f5f5f5;
-            }
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #cccccc;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-                background-color: white;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 10px;
-                background-color: white;
-            }
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                border: none;
-                padding: 12px 20px;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: bold;
-                min-height: 20px;
-            }
-            QPushButton:hover {
-                background-color: #1976D2;
-            }
-            QPushButton:pressed {
-                background-color: #0D47A1;
-            }
-            QListWidget {
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                background-color: white;
-                outline: none;
-                font-size: 14px;
-            }
-            QListWidget::item {
-                padding: 15px;
-                border-bottom: 1px solid #f0f0f0;
-                border-radius: 0px;
-            }
-            QListWidget::item:selected {
-                background-color: #2196F3;
-                color: white;
-                border: none;
-                outline: none;
-            }
-            QListWidget::item:hover {
-                background-color: #e3f2fd;
-            }
-            QListWidget:focus {
-                border: 2px solid #2196F3;
-                outline: none;
-            }
-        """)
 
     def init_tools(self):
         """初始化工具列表"""
         # Pip 镜像源配置工具
-        if PipConfigPage:
+        if PipConfigTab:
             self.tools['pip'] = ToolInfo(
                 name='Pip 镜像源配置',
                 description='配置和管理 Python Pip 包管理器的国内镜像源，支持速度测试',
                 icon='🐍',
-                widget_class=PipConfigPage
+                widget_class=PipConfigTab
             )
 
         # 预留其他工具位置

@@ -60,7 +60,7 @@ class MirrorTestThread(QThread):
         self.is_running = False
 
 
-class PipConfigPage(QWidget):
+class PipConfigTab(QWidget):
     """Pip 配置页面"""
 
     def __init__(self, parent=None):
@@ -95,7 +95,7 @@ class PipConfigPage(QWidget):
         layout = QVBoxLayout(panel)
 
         # 标题
-        title = QLabel("🔧 Pip 镜像源配置")
+        title = QLabel("Pip 镜像源配置")
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -103,7 +103,7 @@ class PipConfigPage(QWidget):
         layout.addWidget(title)
 
         # 当前配置信息组
-        current_group = QGroupBox("📍 当前配置")
+        current_group = QGroupBox("当前配置")
         current_layout = QVBoxLayout(current_group)
 
         self.current_mirror_label = QLabel("当前镜像源: 加载中...")
@@ -117,7 +117,7 @@ class PipConfigPage(QWidget):
         layout.addWidget(current_group)
 
         # 镜像源选择组
-        select_group = QGroupBox("🎯 选择镜像源")
+        select_group = QGroupBox("选择镜像源")
         select_layout = QVBoxLayout(select_group)
 
         # 镜像源下拉框
@@ -126,52 +126,35 @@ class PipConfigPage(QWidget):
         select_layout.addWidget(self.mirror_combo)
 
         # 配置按钮
-        config_btn = QPushButton("✅ 应用配置")
+        config_btn = QPushButton("应用配置")
         config_btn.clicked.connect(self.configure_mirror)
-        config_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                padding: 10px;
-                border-radius: 5px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:pressed {
-                background-color: #3d8b40;
-            }
-        """)
         select_layout.addWidget(config_btn)
 
         # 恢复官方源按钮
-        official_btn = QPushButton("🔄 恢复官方源")
+        official_btn = QPushButton("恢复官方源")
         official_btn.clicked.connect(lambda: self.configure_mirror('official'))
         select_layout.addWidget(official_btn)
 
         layout.addWidget(select_group)
 
         # 操作按钮组
-        button_group = QGroupBox("⚡ 快捷操作")
+        button_group = QGroupBox("快捷操作")
         button_layout = QGridLayout(button_group)
 
         # 刷新配置按钮
-        refresh_btn = QPushButton("🔄 刷新配置")
+        refresh_btn = QPushButton("刷新配置")
         refresh_btn.clicked.connect(self.load_current_config)
         button_layout.addWidget(refresh_btn, 0, 0)
 
         # 打开配置文件按钮
-        open_file_btn = QPushButton("📂 打开配置文件")
+        open_file_btn = QPushButton("打开配置文件")
         open_file_btn.clicked.connect(self.open_config_file)
         button_layout.addWidget(open_file_btn, 0, 1)
 
         layout.addWidget(button_group)
 
         # 使用说明
-        help_group = QGroupBox("📖 使用说明")
+        help_group = QGroupBox("使用说明")
         help_layout = QVBoxLayout(help_group)
 
         help_text = QTextEdit()
@@ -182,15 +165,6 @@ class PipConfigPage(QWidget):
                              "3. 测试速度：在右侧面板测试各镜像源速度\n"
                              "4. 恢复默认：点击\"恢复官方源\"使用默认源\n\n"
                              "建议：选择响应速度最快的镜像源以获得最佳下载体验。")
-        help_text.setStyleSheet("""
-            QTextEdit {
-                background-color: #f8f9fa;
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                padding: 8px;
-                font-size: 12px;
-            }
-        """)
         help_layout.addWidget(help_text)
 
         layout.addWidget(help_group)
@@ -205,7 +179,7 @@ class PipConfigPage(QWidget):
         layout = QVBoxLayout(panel)
 
         # 标题
-        title = QLabel("⚡ 镜像源速度测试")
+        title = QLabel("镜像源速度测试")
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -213,56 +187,18 @@ class PipConfigPage(QWidget):
         layout.addWidget(title)
 
         # 测试控制组
-        control_group = QGroupBox("🎮 测试控制")
+        control_group = QGroupBox("测试控制")
         control_layout = QHBoxLayout(control_group)
 
         # 开始测试按钮
-        self.test_btn = QPushButton("🚀 开始测试")
+        self.test_btn = QPushButton("开始测试")
         self.test_btn.clicked.connect(self.start_test)
-        self.test_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 5px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #1976D2;
-            }
-            QPushButton:pressed {
-                background-color: #0D47A1;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
         control_layout.addWidget(self.test_btn)
 
         # 停止测试按钮
-        self.stop_btn = QPushButton("⏹ 停止测试")
+        self.stop_btn = QPushButton("停止测试")
         self.stop_btn.clicked.connect(self.stop_test)
         self.stop_btn.setEnabled(False)
-        self.stop_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 5px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #d32f2f;
-            }
-            QPushButton:pressed {
-                background-color: #b71c1c;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
         control_layout.addWidget(self.stop_btn)
 
         # 进度条
@@ -273,7 +209,7 @@ class PipConfigPage(QWidget):
         layout.addWidget(control_group)
 
         # 测试结果表格
-        result_group = QGroupBox("📊 测试结果")
+        result_group = QGroupBox("测试结果")
         result_layout = QVBoxLayout(result_group)
 
         self.result_table = QTableWidget()
@@ -284,7 +220,6 @@ class PipConfigPage(QWidget):
 
         # 测试状态
         self.status_label = QLabel("准备就绪")
-        self.status_label.setStyleSheet("color: #666; font-style: italic;")
         layout.addWidget(self.status_label)
 
         return panel
@@ -353,9 +288,9 @@ class PipConfigPage(QWidget):
 
             config_file = self.configurator.pip_config_file
             if config_file.exists():
-                self.config_file_label.setText(f"配置文件: {config_file} ✓")
+                self.config_file_label.setText(f"配置文件: {config_file} (存在)")
             else:
-                self.config_file_label.setText(f"配置文件: {config_file} ✗")
+                self.config_file_label.setText(f"配置文件: {config_file} (不存在)")
 
         except Exception as e:
             QMessageBox.warning(self, "错误", f"加载配置失败: {str(e)}")
@@ -464,31 +399,17 @@ class PipConfigPage(QWidget):
                 # 响应时间
                 if speed is not None:
                     time_text = f"{speed * 1000:.0f} ms"
-                    status_text = "✓ 可用"
-                    # 根据速度设置颜色
-                    if speed < 0.5:
-                        time_color = "green"
-                        status_color = "green"
-                    elif speed < 1.0:
-                        time_color = "orange"
-                        status_color = "orange"
-                    else:
-                        time_color = "red"
-                        status_color = "red"
+                    status_text = "可用"
                 else:
                     time_text = "超时"
-                    status_text = "✗ 不可用"
-                    time_color = "red"
-                    status_color = "red"
+                    status_text = "不可用"
 
                 time_item = QTableWidgetItem(time_text)
                 time_item.setTextAlignment(Qt.AlignCenter)
-                time_item.setStyleSheet(f"color: {time_color}; font-weight: bold;")
                 self.result_table.setItem(row, 3, time_item)
 
                 status_item = QTableWidgetItem(status_text)
                 status_item.setTextAlignment(Qt.AlignCenter)
-                status_item.setStyleSheet(f"color: {status_color}; font-weight: bold;")
                 self.result_table.setItem(row, 4, status_item)
 
         # 恢复按钮状态
