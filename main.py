@@ -10,6 +10,13 @@ import os
 import platform
 from pathlib import Path
 from typing import Dict, Optional
+
+# 确保项目根目录在Python路径中
+if __name__ == "__main__":
+    # 获取当前脚本的绝对路径的目录
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QSplitter, QGroupBox, QMessageBox,
@@ -79,17 +86,19 @@ def is_admin() -> bool:
         return False
 
 
-def require_admin_privileges() -> bool:
+def require_admin_privileges(app=None) -> bool:
     """检查管理员权限，如果没有则显示提示并返回False"""
     if not is_admin():
-        # 创建一个临时的QApplication来显示消息框
-        temp_app = QApplication.instance()
-        if temp_app is None:
-            temp_app = QApplication(sys.argv)
+        # 如果没有QApplication实例，创建一个
+        current_app = QApplication.instance()
+        if current_app is None:
+            if app is not None:
+                current_app = app
+            else:
+                current_app = QApplication(sys.argv)
 
         msg_box = QMessageBox()
-        msg_box.setIconPixmap(QMessageBox.style().standardIcon(
-            QMessageBox.style().SP_MessageBoxWarning).pixmap(64, 64))
+        msg_box.setIcon(QMessageBox.Warning)
         msg_box.setWindowTitle("权限提示")
         msg_box.setText("DevManager 检测到当前未以管理员权限运行")
         msg_box.setInformativeText(
@@ -115,14 +124,23 @@ def require_admin_privileges() -> bool:
                     # 获取当前脚本的完整路径
                     script_path = os.path.abspath(sys.argv[0])
                     # 使用ShellExecuteW以管理员权限重新启动
-                    ctypes.windll.shell32.ShellExecuteW(
+                    result = ctypes.windll.shell32.ShellExecuteW(
                         None, "runas", "python", f'"{script_path}"', None, 1
                     )
+
+                    # 如果重新启动成功，立即退出当前实例
+                    if result > 32:  # ShellExecuteW成功时返回>32的值
+                        print("正在以管理员权限重新启动...")
+                        QApplication.quit()
+                        return False
+                    else:
+                        raise Exception(f"ShellExecuteW失败，返回值: {result}")
+
                 else:
                     # Linux/macOS 使用sudo重新启动
                     script_path = os.path.abspath(sys.argv[0])
                     os.execlp("sudo", "sudo", "python3", script_path)
-                return True
+
             except Exception as e:
                 QMessageBox.critical(
                     None,
@@ -623,12 +641,32 @@ class AboutDialog(QDialog):
 def main():
     """主函数"""
 
-    # 首先检查管理员权限
-    if not require_admin_privileges():
-        # 如果用户拒绝或重新启动失败，直接退出
-        return
+    # 单实例检查 - 防止多个实例同时运行
+    if platform.system() == "Windows":
+        import socket
+        try:
+            # 尝试创建一个套接字来检查是否已有实例运行
+            lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+            # Windows使用文件路径作为Unix domain socket
+            lock_file = os.path.join(os.environ.get('TEMP', '/tmp'), 'devmanager.lock')
+
+            try:
+                # 尝试绑定锁文件
+                lock_socket.bind(lock_file)
+            except socket.error:
+                # 如果绑定失败，说明已有实例运行
+                print("DevManager 已在运行中")
+                return 0
+        except Exception:
+            # 如果单实例检查失败，继续运行
+            pass
 
     app = QApplication(sys.argv)
+
+    # 设置环境变量以避免字体问题
+    if platform.system() == "Windows":
+        os.environ['QT_QPA_PLATFORM'] = 'windows'
+        os.environ['QT_FONT_DPI'] = '96'
 
     # 设置应用程序信息
     app.setApplicationName("DevManager")
@@ -637,11 +675,57 @@ def main():
     app.setApplicationVersion("1.0.0")
 
     # 设置应用程序样式
-    app.setStyle(QStyleFactory.create('windowsvista'))
+    try:
+        app.setStyle(QStyleFactory.create('windowsvista'))
+    except:
+        # 如果windowsvista样式不可用，使用默认样式
+        pass
 
-    # 设置全局字体
-    font = QFont("Microsoft YaHei", 9)
-    app.setFont(font)
+    # 设置全局字体，优先使用系统默认字体
+    try:
+        # 设置字体族，避免使用可能导致问题的字体
+        font_family = []
+
+        # 在Windows上优先使用这些字体
+        if platform.system() == "Windows":
+            font_family = [
+                "Microsoft YaHei",  # 微软雅黑
+                "Segoe UI",        # Windows默认字体
+                "Arial",           # 通用字体
+                "SimSun"           # 宋体
+            ]
+        else:
+            # Linux/macOS使用系统字体
+            font_family = [
+                "Arial",
+                "Helvetica",
+                "DejaVu Sans"
+            ]
+
+        # 设置字体族，让Qt自动选择第一个可用的字体
+        font = QFont()
+        font.setFamilies(font_family)
+        font.setPointSize(9)
+        app.setFont(font)
+
+        # 设置应用程序默认字体数据库，确保字体库完整
+        from PySide6.QtGui import QFontDatabase
+        font_db = QFontDatabase()
+
+    except Exception as e:
+        # 如果设置字体失败，使用系统默认字体
+        print(f"字体设置警告: {e}")
+        # 确保至少有一个可用的字体
+        default_font = QFont()
+        default_font.setStyleHint(QFont.SansSerif)
+        app.setFont(default_font)
+
+    # 检查管理员权限（传入已创建的app实例）
+    admin_check_result = require_admin_privileges(app)
+    if not admin_check_result:
+        # 如果用户拒绝或重新启动失败，直接退出
+        print("程序退出")
+        return 0
 
     # 创建并显示主窗口
     try:
