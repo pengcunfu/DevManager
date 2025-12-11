@@ -8,7 +8,7 @@ def build_installer():
     print("Starting installer build...")
 
     # Check if application is built
-    app_path = Path("dist/main.dist/GetFileHash.exe")
+    app_path = Path("dist/main.dist/DevManager.exe")
     if not app_path.exists():
         print("Error: Application not found, please run 'python scripts/build.py' first")
         return False

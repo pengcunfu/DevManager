@@ -1,11 +1,11 @@
-; GetFileHash 安装程序脚本
+; DevManager 安装程序脚本
 ; 使用 Inno Setup 编译
 
-#define MyAppName "GetFileHash"
+#define MyAppName "DevManager"
 #define MyAppVersion "0.0.1"
 #define MyAppPublisher "pengcunfu"
-#define MyAppURL "https://github.com/pengcunfu/GetFileHash"
-#define MyAppExeName "GetFileHash.exe"
+#define MyAppURL "https://github.com/pengcunfu/DevManager"
+#define MyAppExeName "DevManager.exe"
 
 [Setup]
 ; 应用程序基本信息
@@ -26,7 +26,7 @@ DefaultGroupName={#MyAppName}
 Compression=lzma2/max
 SolidCompression=yes
 OutputDir=..\installer
-OutputBaseFilename=GetFileHash-Setup-{#MyAppVersion}
+OutputBaseFilename=DevManager-Setup-{#MyAppVersion}
 ; SetupIconFile=..\resources\icon.png
 
 ; 现代化UI

@@ -4,7 +4,7 @@ import sys
 # 配置
 VERSION = "0.0.1"
 YEAR = "2025"
-AUTHOR = "GetFileHash"
+AUTHOR = "DevManager"
 
 if sys.platform == "win32":
     args = [
@@ -15,14 +15,14 @@ if sys.platform == "win32":
         '--assume-yes-for-downloads',
         '--msvc=latest',
         '--windows-icon-from-ico=resources/icon.png',
-        '--company-name=GetFileHash',
-        '--product-name="GetFileHash SHA-256 Calculator"',
+        '--company-name=DevManager',
+        '--product-name="DevManager SHA-256 Calculator"',
         f'--file-version={VERSION}',
         f'--product-version={VERSION}',
-        '--file-description="GetFileHash SHA-256 Calculator"',
+        '--file-description="DevManager SHA-256 Calculator"',
         f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
         '--output-dir=dist',
-        '--output-filename=GetFileHash.exe',
+        '--output-filename=DevManager.exe',
         'main.py',
     ]
 
