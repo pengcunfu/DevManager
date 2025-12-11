@@ -4,8 +4,8 @@ name: Release - 发布版本
 # 触发条件：推送标签时自动创建 Release
 on:
   push:
-    # tags:
-      # - 'v*'
+    tags:
+      - 'v*'
 
 permissions:
   contents: write

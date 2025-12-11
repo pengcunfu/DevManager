@@ -4,7 +4,7 @@ name: CI - 持续集成
 # 触发条件
 on:
   push:
-    # branches: [ master ]
+    branches: [ main ]
     paths:
       - 'main.py'
       - 'scripts/build.py'
@@ -12,7 +12,7 @@ on:
       - 'resources/**'
       - '.github/workflows/**'
   pull_request:
-    # branches: [ master ]
+    branches: [ main ]
     paths:
       - 'main.py'
       - 'scripts/build.py'
