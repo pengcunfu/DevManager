@@ -4,9 +4,76 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "echo",
+            "label": "运行主程序",
             "type": "shell",
-            "command": "echo Hello"
+            "command": "python",
+            "args": [
+                "${workspaceFolder}/main.py"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "运行主程序 main.py",
+            "icon": {
+                "id": "play",
+                "color": "terminal.ansiGreen"
+            }
+        },
+        {
+            "label": "部署程序",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "scripts/build.py"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "运行部署脚本 scripts/build.py",
+            "icon": {
+                "id": "package",
+                "color": "terminal.ansiBlue"
+            }
+        },
+        {
+            "label": "构建安装程序",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "scripts/build_installer.py"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "构建Windows安装程序",
+            "icon": {
+                "id": "gear",
+                "color": "terminal.ansiYellow"
+            }
         }
     ]
 }
