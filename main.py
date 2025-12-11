@@ -39,6 +39,11 @@ try:
 except ImportError:
     MavenConfigTab = None
 
+try:
+    from app.manager.mysql.mysql_tab import MySQLTab
+except ImportError:
+    MySQLTab = None
+
 
 class ToolInfo:
     """工具信息"""
@@ -94,6 +99,15 @@ class DevManagerWindow(QMainWindow):
                 description='配置和管理 Java Maven 依赖管理器的国内镜像源，支持速度测试',
                 icon='☕',
                 widget_class=MavenConfigTab
+            )
+
+        # MySQL 管理工具
+        if MySQLTab:
+            self.tools['mysql'] = ToolInfo(
+                name='MySQL 管理器',
+                description='MySQL数据库的安装、配置、服务管理和监控',
+                icon='🐬',
+                widget_class=MySQLTab
             )
 
     def init_ui(self):
@@ -435,6 +449,7 @@ class AboutDialog(QDialog):
             '• NPM 镜像源配置 - 管理 Node.js 包管理器的国内镜像源\n'
             '• Composer 管理器 - 安装和配置 PHP 包管理器\n'
             '• Maven 镜像源配置 - 管理 Java Maven 依赖管理器的国内镜像源\n'
+            '• MySQL 管理器 - MySQL数据库的安装、配置和服务管理\n'
             '• 速度测试 - 测试各镜像源响应速度并推荐最佳选择\n'
             '• 一键配置 - 简单快捷的镜像源配置体验'
         )
