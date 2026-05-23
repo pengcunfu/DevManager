@@ -92,10 +92,10 @@ class PipConfigurator:
                 text=True,
                 timeout=10
             )
-            
+
             if result.returncode == 0 and result.stdout.strip():
                 index_url = result.stdout.strip()
-                
+
                 # 查找匹配的镜像源
                 for key, mirror in self.MIRRORS.items():
                     if mirror['url'] in index_url or index_url in mirror['url']:
@@ -104,17 +104,20 @@ class PipConfigurator:
                             'name': mirror['name'],
                             'url': index_url
                         }
-                
+
                 return {
                     'key': 'custom',
                     'name': '自定义源',
                     'url': index_url
                 }
-            
+
             return None
-            
-        except Exception as e:
-            print(f"获取当前配置失败: {e}")
+
+        except FileNotFoundError:
+            # pip 未安装，静默返回 None
+            return None
+        except Exception:
+            # 其他错误也静默处理，避免启动时的干扰信息
             return None
     
     def show_current_config(self):

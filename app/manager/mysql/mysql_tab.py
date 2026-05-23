@@ -39,8 +39,12 @@ class MySQLWorkerThread(QThread):
     def run(self):
         """执行操作"""
         try:
-            if self.operation == "install":
+            if self.operation == "download":
+                self._download_mysql()
+            elif self.operation == "install":
                 self._install_mysql()
+            elif self.operation == "initialize":
+                self._initialize_mysql()
             elif self.operation == "uninstall":
                 self._uninstall_mysql()
             elif self.operation == "start_service":
@@ -82,33 +86,29 @@ class MySQLWorkerThread(QThread):
         self.log_signal.emit("安装要求检查通过")
         self.progress_signal.emit(30)
 
-        if self.installer.system == "windows":
-            # 下载MySQL
-            self.log_signal.emit("正在下载MySQL...")
-            installer_path = self.installer.download_mysql()
-            self.progress_signal.emit(50)
+        # 下载MySQL
+        self.log_signal.emit("正在下载MySQL...")
+        installer_path = self.installer.download_mysql()
+        self.progress_signal.emit(50)
 
-            if not installer_path:
-                error_msg = "下载MySQL失败"
-                self.log_signal.emit(error_msg)
-                self.finished_signal.emit(False, error_msg)
-                return
+        if not installer_path:
+            error_msg = "下载MySQL失败"
+            self.log_signal.emit(error_msg)
+            self.finished_signal.emit(False, error_msg)
+            return
 
-            # 安装MySQL
-            self.log_signal.emit("正在安装MySQL...")
-            success = self.installer.install_mysql(installer_path)
-            self.progress_signal.emit(80)
+        # 安装MySQL
+        self.log_signal.emit("正在安装MySQL...")
+        success = self.installer.install_mysql(installer_path)
+        self.progress_signal.emit(80)
 
-            if success:
-                self.log_signal.emit("MySQL安装成功")
-                self.finished_signal.emit(True, "MySQL安装成功")
-            else:
-                error_msg = "MySQL安装失败"
-                self.log_signal.emit(error_msg)
-                self.finished_signal.emit(False, error_msg)
+        if success:
+            self.log_signal.emit("MySQL安装成功")
+            self.finished_signal.emit(True, "MySQL安装成功")
         else:
-            self.log_signal.emit("请使用系统包管理器安装MySQL")
-            self.finished_signal.emit(False, "请使用系统包管理器安装MySQL")
+            error_msg = "MySQL安装失败"
+            self.log_signal.emit(error_msg)
+            self.finished_signal.emit(False, error_msg)
 
         self.progress_signal.emit(100)
 
@@ -185,6 +185,49 @@ class MySQLWorkerThread(QThread):
             self.log_signal.emit("root密码设置失败")
             self.finished_signal.emit(False, "root密码设置失败")
 
+    def _download_mysql(self):
+        """下载MySQL"""
+        self.log_signal.emit("开始下载MySQL...")
+        self.progress_signal.emit(10)
+
+        installer_path = self.installer.download_mysql()
+        self.progress_signal.emit(80)
+
+        if installer_path:
+            self.log_signal.emit(f"下载完成: {installer_path}")
+            self.finished_signal.emit(True, f"MySQL下载完成: {installer_path}")
+        else:
+            error_msg = "MySQL下载失败"
+            self.log_signal.emit(error_msg)
+            self.finished_signal.emit(False, error_msg)
+
+    def _initialize_mysql(self):
+        """初始化MySQL"""
+        self.log_signal.emit("开始初始化MySQL数据库...")
+        self.progress_signal.emit(20)
+
+        # 获取初始化参数
+        secure = self.kwargs.get('secure', False)
+        root_password = self.kwargs.get('root_password', None)
+
+        self.log_signal.emit("正在初始化数据目录...")
+        self.progress_signal.emit(40)
+
+        success = self.installer.initialize_mysql(secure=secure, root_password=root_password)
+        self.progress_signal.emit(80)
+
+        if success:
+            self.log_signal.emit("MySQL数据库初始化成功")
+            if root_password:
+                self.log_signal.emit("root密码设置完成")
+            else:
+                self.log_signal.emit("root用户无密码，请及时设置密码")
+            self.finished_signal.emit(True, "MySQL初始化完成")
+        else:
+            error_msg = "MySQL初始化失败"
+            self.log_signal.emit(error_msg)
+            self.finished_signal.emit(False, error_msg)
+
     def _check_requirements(self):
         """检查安装要求"""
         self.log_signal.emit("检查安装要求...")
@@ -250,11 +293,11 @@ class MySQLTab(QWidget):
         info_layout = QGridLayout(info_group)
 
         info_layout.addWidget(QLabel("操作系统:"), 0, 0)
-        self.os_label = QLabel(self.installer.system.title())
+        self.os_label = QLabel("Windows")
         info_layout.addWidget(self.os_label, 0, 1)
 
         info_layout.addWidget(QLabel("架构:"), 0, 2)
-        self.arch_label = QLabel(self.installer.architecture)
+        self.arch_label = QLabel("x64")
         info_layout.addWidget(self.arch_label, 0, 3)
 
         info_layout.addWidget(QLabel("安装状态:"), 1, 0)
@@ -286,15 +329,35 @@ class MySQLTab(QWidget):
         install_group = QGroupBox("安装操作")
         install_layout = QVBoxLayout(install_group)
 
+        # 第一行按钮
+        first_row_layout = QHBoxLayout()
+
+        # 下载按钮
+        self.download_btn = QPushButton("下载MySQL")
+        self.download_btn.clicked.connect(self.download_mysql)
+        first_row_layout.addWidget(self.download_btn)
+
+        # 初始化按钮
+        self.initialize_btn = QPushButton("初始化数据库")
+        self.initialize_btn.clicked.connect(self.initialize_mysql)
+        first_row_layout.addWidget(self.initialize_btn)
+
+        install_layout.addLayout(first_row_layout)
+
+        # 第二行按钮
+        second_row_layout = QHBoxLayout()
+
         # 安装按钮
         self.install_btn = QPushButton("安装MySQL")
         self.install_btn.clicked.connect(self.install_mysql)
-        install_layout.addWidget(self.install_btn)
+        second_row_layout.addWidget(self.install_btn)
 
         # 卸载按钮
         self.uninstall_btn = QPushButton("卸载MySQL")
         self.uninstall_btn.clicked.connect(self.uninstall_mysql)
-        install_layout.addWidget(self.uninstall_btn)
+        second_row_layout.addWidget(self.uninstall_btn)
+
+        install_layout.addLayout(second_row_layout)
 
         # 安装服务按钮
         self.install_service_btn = QPushButton("安装MySQL服务")
@@ -523,6 +586,71 @@ class MySQLTab(QWidget):
         self.worker_thread.finished_signal.connect(self.on_operation_finished)
         self.worker_thread.start()
 
+    def download_mysql(self):
+        """下载MySQL"""
+        if self.worker_thread and self.worker_thread.isRunning():
+            return
+
+        self.log_text.clear()
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setValue(0)
+
+        self.worker_thread = MySQLWorkerThread("download", self.installer)
+        self.worker_thread.log_signal.connect(self.add_log)
+        self.worker_thread.progress_signal.connect(self.progress_bar.setValue)
+        self.worker_thread.finished_signal.connect(self.on_operation_finished)
+        self.worker_thread.start()
+
+    def initialize_mysql(self):
+        """初始化MySQL数据库"""
+        reply = QMessageBox.question(
+            self, "确认初始化", "确定要初始化MySQL数据库吗？\n\n可以选择：\n- 安全模式（生成临时密码）\n- 无密码模式（root无密码）",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        if self.worker_thread and self.worker_thread.isRunning():
+            return
+
+        # 询问初始化模式
+        secure_reply = QMessageBox.question(
+            self, "初始化模式", "选择初始化模式：\n\nYes: 安全模式（生成临时密码）\nNo: 无密码模式",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        secure = (secure_reply == QMessageBox.Yes)
+        root_password = None
+
+        # 如果选择无密码模式，询问是否设置root密码
+        if not secure:
+            password_reply = QMessageBox.question(
+                self, "设置root密码", "是否现在设置root密码？\n\nYes: 设置密码\nNo: 保持无密码",
+                QMessageBox.Yes | QMessageBox.No
+            )
+
+            if password_reply == QMessageBox.Yes:
+                # 弹出密码输入对话框
+                password, ok = QMessageBox.getText(
+                    self, "输入密码", "请输入root密码:", QMessageBox.Password
+                )
+                if ok and password:
+                    root_password = password
+                else:
+                    QMessageBox.warning(self, "警告", "密码输入无效，将使用无密码模式")
+
+        self.log_text.clear()
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setValue(0)
+
+        self.worker_thread = MySQLWorkerThread("initialize", self.installer,
+                                               secure=secure, root_password=root_password)
+        self.worker_thread.log_signal.connect(self.add_log)
+        self.worker_thread.progress_signal.connect(self.progress_bar.setValue)
+        self.worker_thread.finished_signal.connect(self.on_operation_finished)
+        self.worker_thread.start()
+
     def install_mysql(self):
         """安装MySQL"""
         reply = QMessageBox.question(
@@ -718,10 +846,7 @@ class MySQLTab(QWidget):
             config_file = config.get('config_file')
 
             if config_file and os.path.exists(config_file):
-                if sys.platform == "win32":
-                    os.startfile(config_file)
-                else:
-                    subprocess.run(["xdg-open", config_file])
+                os.startfile(config_file)
             else:
                 QMessageBox.warning(self, "警告", "配置文件不存在")
 

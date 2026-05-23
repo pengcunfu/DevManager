@@ -692,7 +692,8 @@ def main():
                 "Microsoft YaHei",  # 微软雅黑
                 "Segoe UI",        # Windows默认字体
                 "Arial",           # 通用字体
-                "SimSun"           # 宋体
+                "SimSun",          # 宋体
+                "MS Sans Serif"    # 旧版Windows字体
             ]
         else:
             # Linux/macOS使用系统字体
@@ -709,8 +710,7 @@ def main():
         app.setFont(font)
 
         # 设置应用程序默认字体数据库，确保字体库完整
-        from PySide6.QtGui import QFontDatabase
-        font_db = QFontDatabase()
+        # QFontDatabase 现在使用静态方法，不需要实例化
 
     except Exception as e:
         # 如果设置字体失败，使用系统默认字体

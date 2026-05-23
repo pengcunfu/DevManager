@@ -3,10 +3,10 @@
 """
 MySQL 配置管理模块
 提供 MySQL 配置文件的读取、修改和管理功能
+支持 MySQL 8.0.44 版本
 """
 
 import os
-import sys
 import json
 import shutil
 import configparser
@@ -15,11 +15,50 @@ from pathlib import Path
 from typing import Dict, Optional, List, Any
 
 
+# MySQL 8.0.44 常量配置
+MYSQL_VERSION = "8.0.44"
+MYSQL_DOWNLOAD_URL = "https://cdn.mysql.com//Downloads/MySQL-8.0/mysql-8.0.44-winx64.zip"
+DEFAULT_PORT = 3306
+DEFAULT_DATA_DIR = "data"
+DEFAULT_CHARSET = "utf8mb4"
+DEFAULT_COLLATION = "utf8mb4_unicode_ci"
+
+# 默认配置模板
+DEFAULT_CONFIG_TEMPLATE = {
+    "mysqld": {
+        "port": DEFAULT_PORT,
+        "basedir": None,  # 运行时设置
+        "datadir": None,  # 运行时设置
+        "character-set-server": DEFAULT_CHARSET,
+        "collation-server": DEFAULT_COLLATION,
+        "default-storage-engine": "INNODB",
+        "default_authentication_plugin": "mysql_native_password",
+        # 临时目录
+        "tmpdir": None,  # 运行时设置
+        # 可选的初始化配置，用户可后续自行调整
+        # "skip-grant-tables": None,  # 如需无密码登录可取消注释
+    },
+    "client": {
+        "port": DEFAULT_PORT,
+        "default-character-set": DEFAULT_CHARSET,
+    },
+    "mysql": {
+        "default-character-set": DEFAULT_CHARSET,
+    }
+}
+
+
 class MySQLConfigManager:
     """MySQL 配置管理器"""
 
-    def __init__(self):
-        """初始化配置管理器"""
+    def __init__(self, installation_path: Optional[str] = None):
+        """初始化配置管理器
+
+        Args:
+            installation_path: MySQL安装路径，如果为None则自动检测
+        """
+        self.installation_path = installation_path
+        self.mysql_version = MYSQL_VERSION
         self.default_paths = self._get_default_mysql_paths()
         self.config_files = self._get_config_files()
 
@@ -27,43 +66,40 @@ class MySQLConfigManager:
         """获取默认的MySQL安装路径"""
         paths = {}
 
-        if sys.platform == "win32":
-            # Windows 常见安装路径
-            possible_paths = [
-                r"C:\Program Files\MySQL",
-                r"C:\Program Files (x86)\MySQL",
-                r"D:\MySQL",
-                r"E:\MySQL"
-            ]
+        # 默认安装目录
+        default_install_path = fr"D:\Env\mysql\mysql-{MYSQL_VERSION}"
 
-            for base_path in possible_paths:
-                if os.path.exists(base_path):
-                    # 查找MySQL版本目录
-                    for item in os.listdir(base_path):
-                        if item.startswith("MySQL Server"):
-                            version_path = os.path.join(base_path, item)
-                            if os.path.isdir(version_path):
-                                paths['installation'] = version_path
-                                paths['bin'] = os.path.join(version_path, 'bin')
-                                paths['data'] = os.path.join(version_path, 'data')
-                                paths['config'] = os.path.join(version_path, 'my.ini')
-                                break
-                    if 'installation' in paths:
-                        break
-
-            # 默认配置文件位置
-            if 'config' not in paths:
-                paths['config'] = r"C:\ProgramData\MySQL\MySQL Server 8.0\my.ini"
-                paths['data'] = r"C:\ProgramData\MySQL\MySQL Server 8.0\Data"
-
+        # 如果有指定安装路径，使用指定路径
+        if self.installation_path:
+            installation_path = self.installation_path
         else:
-            # Linux/macOS 路径
-            paths.update({
-                'config': '/etc/mysql/my.cnf',
-                'config_d': '/etc/mysql/conf.d',
-                'data': '/var/lib/mysql',
-                'log': '/var/log/mysql'
-            })
+            installation_path = default_install_path
+
+        # 设置路径
+        paths['installation'] = installation_path
+        paths['bin'] = os.path.join(installation_path, 'bin')
+        paths['data'] = os.path.join(installation_path, 'data')
+        paths['config'] = os.path.join(installation_path, 'my.ini')
+        paths['log'] = os.path.join(installation_path, 'logs')
+        paths['temp'] = os.path.join(installation_path, 'temp')
+
+        # 检查D:\Env\mysql目录下是否有其他版本作为备选
+        if not os.path.exists(paths['installation']):
+            base_mysql_dir = "D:\\Env\\mysql"
+            if os.path.exists(base_mysql_dir):
+                for item in os.listdir(base_mysql_dir):
+                    item_path = os.path.join(base_mysql_dir, item)
+                    if os.path.isdir(item_path) and item.startswith("mysql-"):
+                        # 检查是否有bin目录（表示这是一个完整的MySQL安装）
+                        bin_path = os.path.join(item_path, 'bin')
+                        if os.path.exists(bin_path):
+                            paths['installation'] = item_path
+                            paths['bin'] = bin_path
+                            paths['data'] = os.path.join(item_path, 'data')
+                            paths['config'] = os.path.join(item_path, 'my.ini')
+                            paths['log'] = os.path.join(item_path, 'logs')
+                            paths['temp'] = os.path.join(item_path, 'temp')
+                            break
 
         return paths
 
@@ -71,67 +107,63 @@ class MySQLConfigManager:
         """获取MySQL配置文件列表"""
         config_files = []
 
-        if sys.platform == "win32":
-            config_files.append(self.default_paths.get('config', ''))
-            # 检查其他可能的位置
-            program_data = os.environ.get('ProgramData', 'C:\\ProgramData')
-            for root, dirs, files in os.walk(program_data):
-                if 'MySQL' in root and 'my.ini' in files:
-                    config_files.append(os.path.join(root, 'my.ini'))
-        else:
-            config_files.extend([
-                '/etc/mysql/my.cnf',
-                '/etc/my.cnf',
-                '~/.my.cnf'
-            ])
+        # 优先使用当前安装路径的配置文件
+        config_file = self.default_paths.get('config', '')
+        if config_file:
+            config_files.append(config_file)
 
-        return [f for f in config_files if f and os.path.exists(f)]
+        # 检查其他可能的位置
+        possible_locations = [
+            # 默认安装目录
+            fr"D:\Env\mysql\mysql-{MYSQL_VERSION}\my.ini",
+            # 其他可能的安装位置
+            fr"D:\Env\mysql\mysql-{MYSQL_VERSION}\\conf\\my.ini",
+        ]
+
+        # 检查D:\Env\mysql目录下是否有其他版本
+        base_mysql_dir = "D:\\Env\\mysql"
+        if os.path.exists(base_mysql_dir):
+            for item in os.listdir(base_mysql_dir):
+                item_path = os.path.join(base_mysql_dir, item)
+                if os.path.isdir(item_path) and item.startswith("mysql-"):
+                    config_file = os.path.join(item_path, 'my.ini')
+                    if os.path.exists(config_file):
+                        possible_locations.append(config_file)
+
+        # 去重并过滤存在的文件
+        unique_files = list(set(possible_locations))
+        return [f for f in unique_files if f and os.path.exists(f)]
 
     def find_mysql_installation(self) -> Optional[str]:
         """查找MySQL安装路径"""
-        if sys.platform == "win32":
-            # 通过注册表查找
-            try:
-                import winreg
-                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
-                                   r"SOFTWARE\MySQL AB") as key:
-                    i = 0
-                    while True:
-                        try:
-                            subkey_name = winreg.EnumKey(key, i)
-                            if "MySQL Server" in subkey_name:
-                                with winreg.OpenKey(key, subkey_name) as subkey:
-                                    installation_path, _ = winreg.QueryValueEx(subkey, "Location")
-                                    return installation_path
-                            i += 1
-                        except WindowsError:
-                            break
-            except:
-                pass
+        # 通过注册表查找
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                               r"SOFTWARE\MySQL AB") as key:
+                i = 0
+                while True:
+                    try:
+                        subkey_name = winreg.EnumKey(key, i)
+                        if "MySQL Server" in subkey_name:
+                            with winreg.OpenKey(key, subkey_name) as subkey:
+                                installation_path, _ = winreg.QueryValueEx(subkey, "Location")
+                                return installation_path
+                        i += 1
+                    except WindowsError:
+                        break
+        except:
+            pass
 
-            # 通过PATH环境变量查找
-            try:
-                result = subprocess.run(['mysql', '--version'],
-                                      capture_output=True, text=True)
-                if result.returncode == 0:
-                    # 从版本信息中可能无法直接获取路径，但可以确认mysql已安装
-                    pass
-            except:
+        # 通过PATH环境变量查找
+        try:
+            result = subprocess.run(['mysql', '--version'],
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                # 从版本信息中可能无法直接获取路径，但可以确认mysql已安装
                 pass
-
-        else:
-            # Linux/macOS 使用 which 命令
-            try:
-                result = subprocess.run(['which', 'mysql'],
-                                      capture_output=True, text=True)
-                if result.returncode == 0:
-                    mysql_path = result.stdout.strip()
-                    # mysql 通常在 bin 目录下
-                    bin_path = os.path.dirname(mysql_path)
-                    # 返回上级目录作为安装路径
-                    return os.path.dirname(bin_path)
-            except:
-                pass
+        except:
+            pass
 
         return None
 
@@ -387,72 +419,76 @@ class MySQLConfigManager:
 
         return "\n".join(summary)
 
+    def create_config_file(self, installation_path: str, data_dir: Optional[str] = None,
+                          port: int = DEFAULT_PORT) -> str:
+        """创建MySQL配置文件
 
-def main():
-    """主函数 - 用于命令行测试"""
-    import argparse
+        Args:
+            installation_path: MySQL安装路径
+            data_dir: 数据目录，默认为安装路径下的data目录
+            port: 端口号，默认3306
 
-    parser = argparse.ArgumentParser(description="MySQL 配置管理工具")
-    parser.add_argument('--show', action='store_true', help='显示当前配置')
-    parser.add_argument('--validate', action='store_true', help='验证配置文件')
-    parser.add_argument('--add-performance', action='store_true', help='添加性能优化配置')
-    parser.add_argument('--add-security', action='store_true', help='添加安全配置')
-    parser.add_argument('--summary', action='store_true', help='显示配置摘要')
+        Returns:
+            配置文件路径
+        """
+        if data_dir is None:
+            data_dir = os.path.join(installation_path, DEFAULT_DATA_DIR)
 
-    args = parser.parse_args()
+        # 创建必要的目录
+        dirs_to_create = [
+            data_dir,
+            os.path.join(installation_path, 'temp'),  # 简化配置只需要临时目录
+        ]
 
-    config_manager = MySQLConfigManager()
+        for dir_path in dirs_to_create:
+            os.makedirs(dir_path, exist_ok=True)
+            print(f"确保目录存在: {dir_path}")
 
-    if args.show:
-        config = config_manager.get_current_config()
-        print("当前 MySQL 配置:")
-        for key, value in config.items():
-            if value:
-                print(f"  {key}: {value}")
+        # 基于模板创建配置
+        config_data = DEFAULT_CONFIG_TEMPLATE.copy()
+        config_data["mysqld"]["basedir"] = installation_path
+        config_data["mysqld"]["datadir"] = data_dir
+        config_data["mysqld"]["port"] = str(port)
 
-    elif args.validate:
-        result = config_manager.validate_config()
-        if result['valid']:
-            print("✓ 配置文件有效")
-        else:
-            print("✗ 配置文件存在问题:")
+        # 使用原始Windows路径格式
+        temp_dir = os.path.join(installation_path, 'temp')
+        config_data["mysqld"]["tmpdir"] = temp_dir
+        config_data["client"]["port"] = str(port)
 
-        if result['errors']:
-            print("\n错误:")
-            for error in result['errors']:
-                print(f"  - {error}")
+        # 写入配置文件
+        config_file = os.path.join(installation_path, "my.ini")
 
-        if result['warnings']:
-            print("\n警告:")
-            for warning in result['warnings']:
-                print(f"  - {warning}")
+        try:
+            # 直接删除原配置文件，确保使用新的简化配置
+            if os.path.exists(config_file):
+                os.remove(config_file)
+                print(f"已删除原配置文件: {config_file}")
 
-    elif args.add_performance:
-        if config_manager.add_performance_config():
-            print("✓ 性能优化配置已添加")
-        else:
-            print("✗ 添加性能配置失败")
+            # 创建新的配置文件
+            config = configparser.ConfigParser()
+            for section_name, section_data in config_data.items():
+                if section_data:  # 跳过空节
+                    config.add_section(section_name)
+                    for key, value in section_data.items():
+                        if value is not None:  # 跳过None值
+                            # 确保路径中没有None值，并且路径格式正确
+                            if value and 'None' not in str(value):
+                                config.set(section_name, key, str(value))
 
-    elif args.add_security:
-        if config_manager.add_security_config():
-            print("✓ 安全配置已添加")
-        else:
-            print("✗ 添加安全配置失败")
+            with open(config_file, 'w', encoding='utf-8') as f:
+                config.write(f)
 
-    elif args.summary:
-        print(config_manager.get_config_summary())
+            print(f"配置文件已创建: {config_file}")
+            print(f"数据目录: {data_dir}")
+            print(f"临时目录: {os.path.join(installation_path, 'temp')}")
+            return config_file
 
-    else:
-        # 默认显示配置摘要
-        print(config_manager.get_config_summary())
+        except Exception as e:
+            print(f"创建配置文件失败: {e}")
+            raise
+
+    def get_template_config(self) -> Dict[str, Any]:
+        """获取默认配置模板"""
+        return DEFAULT_CONFIG_TEMPLATE.copy()
 
 
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n用户中断操作")
-        sys.exit(0)
-    except Exception as e:
-        print(f"程序执行出错: {e}")
-        sys.exit(1)
